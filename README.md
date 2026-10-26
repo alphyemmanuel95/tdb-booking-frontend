@@ -28,9 +28,11 @@ npm run dev                  # http://localhost:5173
 ```
 
 There is no backend. The app uses an in-memory mock API (`frontend/src/api/mockApi.ts`) that behaves
-like an unreliable network: every call takes a random 200–1500 ms and fails 20% of the time (change
-`DEFAULT_MOCK_API_CONFIG` to adjust). Data is seeded on load (3 temples, slots for the next 7 days, some
+like an unreliable network: every call takes a random 200–1500 ms and fails 20% of the time, half of those after
+the change was saved, as if the response was lost (change `DEFAULT_MOCK_API_CONFIG` to adjust). Data is seeded on load (3 temples, slots for the next 7 days, some
 full and some already started) and resets on page refresh.
+
+In `npm run dev` only, set the failure rate from the URL: `http://localhost:5173/?failureRate=0` (never fail) or `?failureRate=1` (always fail); add `&lostResponseShare=1` to make every failure happen after the server saved the change (a lost response).
 
 ## Scripts (run in `frontend/`)
 
