@@ -10,6 +10,11 @@ export interface MockApiConfig {
   failureRate: number;
   minDelayMs: number;
   maxDelayMs: number;
+  /**
+   * Optional fixed latency for one `getSlots` call, in ms; `undefined` keeps the random delay.
+   * Lets tests make the response for one selection arrive after another.
+   */
+  getSlotsDelayMs?: ((templeId: string, date: string) => number | undefined) | undefined;
 }
 
 export const DEFAULT_MOCK_API_CONFIG: MockApiConfig = {
@@ -38,8 +43,9 @@ export function resetMockApi(seed: MockDb = createSeed()): void {
 
 const PHONE_PATTERN = /^[6-9]\d{9}$/;
 
-async function simulate<T>(work: () => T): Promise<T> {
-  const delayMs = config.minDelayMs + Math.random() * (config.maxDelayMs - config.minDelayMs);
+async function simulate<T>(work: () => T, fixedDelayMs?: number): Promise<T> {
+  const delayMs =
+    fixedDelayMs ?? config.minDelayMs + Math.random() * (config.maxDelayMs - config.minDelayMs);
   await new Promise((resolve) => setTimeout(resolve, delayMs));
   if (Math.random() < config.failureRate) {
     throw new MockApiError('Network error. Please try again.');
@@ -61,10 +67,12 @@ export function getTemples(): Promise<Temple[]> {
 }
 
 export function getSlots(templeId: string, date: string): Promise<Slot[]> {
-  return simulate(() =>
-    db.slots
-      .filter((slot) => slot.templeId === templeId && slot.date === date)
-      .sort((a, b) => a.startTime.localeCompare(b.startTime)),
+  return simulate(
+    () =>
+      db.slots
+        .filter((slot) => slot.templeId === templeId && slot.date === date)
+        .sort((a, b) => a.startTime.localeCompare(b.startTime)),
+    config.getSlotsDelayMs?.(templeId, date),
   );
 }
 
