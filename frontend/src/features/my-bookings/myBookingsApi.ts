@@ -17,9 +17,10 @@ export const myBookingsApi = baseApi.injectEndpoints({
     }),
     cancelBooking: build.mutation<Booking, CancelBookingArgs>({
       queryFn: ({ bookingId }) => toQueryResult(() => mockApi.cancelBooking(bookingId)),
-      // Released tickets change slot counts. The booking list is patched below instead of
-      // refetched, so a randomly failing refetch cannot hide a cancellation that succeeded.
-      invalidatesTags: (_result, error) => (error ? [] : ['Slots']),
+      // Released tickets change slot counts, and after a network error the cancel may still have
+      // reached the server, so slot counts are refreshed either way. The booking list is patched
+      // below instead of refetched, so a randomly failing refetch cannot hide a cancellation.
+      invalidatesTags: ['Slots'],
       async onQueryStarted({ bookingId, phone }, { dispatch, queryFulfilled }) {
         // Optimistic: show the booking as cancelled straight away.
         const patch = dispatch(
@@ -29,7 +30,15 @@ export const myBookingsApi = baseApi.injectEndpoints({
           }),
         );
         try {
-          await queryFulfilled;
+          const { data } = await queryFulfilled;
+          // Write the server's answer back, in case a list refetch that started before the
+          // cancel reached the server replaced the optimistic patch with the old status.
+          dispatch(
+            myBookingsApi.util.updateQueryData('getBookings', phone, (bookings) => {
+              const index = bookings.findIndex((booking) => booking.id === data.id);
+              if (index !== -1) bookings[index] = data;
+            }),
+          );
         } catch {
           // The server refused or the network failed: restore the previous state.
           // The mutation's own `error` state shows the message.
