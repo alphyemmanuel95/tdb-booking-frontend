@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router';
+import { useLocation, useSearchParams } from 'react-router';
 import type { Booking } from '@/api/types';
 import { Banner } from '@/components/Banner';
 import { Card } from '@/components/Card';
@@ -7,6 +7,7 @@ import { Icon } from '@/components/Icon';
 import { SectionHeading } from '@/components/SectionHeading';
 import { useGetSlotsQuery, useGetTemplesQuery } from '@/features/booking/bookingApi';
 import { BookingForm } from '@/features/booking/components/BookingForm';
+import { ShareSelectionButton } from '@/features/booking/components/ShareSelectionButton';
 import { SlotList } from '@/features/booking/components/SlotList';
 import { TempleDateFilters } from '@/features/booking/components/TempleDateFilters';
 import { getSlotStatus } from '@/features/booking/slotStatus';
@@ -32,6 +33,13 @@ export function BookingPage() {
   const templeId = temples?.some((temple) => temple.id === templeParam) ? templeParam : '';
   const dateParam = searchParams.get(DATE_PARAM) ?? '';
   const date = dates.includes(dateParam) ? dateParam : (dates[0] ?? '');
+  // The shared link carries only the (validated) temple and date, never other query params.
+  const { pathname } = useLocation();
+  const shareUrl = `${window.location.origin}${pathname}?${new URLSearchParams({
+    [TEMPLE_PARAM]: templeId,
+    [DATE_PARAM]: date,
+  }).toString()}`;
+  const templeName = temples?.find((temple) => temple.id === templeId)?.name ?? templeId;
 
   const [slotId, setSlotId] = useState<string | null>(null);
   const [lastBooking, setLastBooking] = useState<Booking | null>(null);
@@ -96,6 +104,12 @@ export function BookingPage() {
             changeSelection({ date: dateKey });
           }}
         />
+        {templeId && (
+          <ShareSelectionButton
+            url={shareUrl}
+            title={t.share.title(templeName, formatDate(date))}
+          />
+        )}
       </Card>
       {/* Always rendered so screen readers announce the message when it is added. */}
       <div role="status">

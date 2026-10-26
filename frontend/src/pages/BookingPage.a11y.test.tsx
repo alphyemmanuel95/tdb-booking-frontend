@@ -41,7 +41,9 @@ describe('BookingPage accessibility', () => {
       formatIstDate(TOMORROW),
     );
 
-    // Tab enters the slot group on its first enabled radio; arrow keys move and select.
+    // The share button comes next, then Tab enters the slot group on its first enabled radio.
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Share these slots' })).toHaveFocus();
     const firstSlot = await screen.findByRole('radio', { name: /10 of 20 tickets remaining/ });
     await user.tab();
     expect(firstSlot).toHaveFocus();
@@ -63,7 +65,9 @@ describe('BookingPage accessibility', () => {
     const confirmation = await screen.findByText(/Booked 3 tickets for Anil Kumar/);
     expect(confirmation).toHaveFocus();
     // It sits inside the persistent live region, so it is also announced.
-    expect(screen.getByRole('status')).toContainElement(confirmation);
+    expect(screen.getAllByRole('status').some((region) => region.contains(confirmation))).toBe(
+      true,
+    );
     // The next Tab goes back to the (refreshed) slot list to book again.
     await user.tab();
     expect(screen.getByRole('radio', { name: /7 of 20 tickets remaining/ })).toHaveFocus();

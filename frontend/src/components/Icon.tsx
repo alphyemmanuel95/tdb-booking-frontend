@@ -1,6 +1,7 @@
 import type { ReactNode, SVGAttributes } from 'react';
 
-export type IconName = 'check' | 'checkCircle' | 'alert' | 'info' | 'chevronDown' | 'lamp';
+export type IconName =
+  'check' | 'checkCircle' | 'alert' | 'info' | 'chevronDown' | 'lamp' | 'share';
 
 const paths: Record<IconName, ReactNode> = {
   check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
@@ -23,6 +24,14 @@ const paths: Record<IconName, ReactNode> = {
     </>
   ),
   chevronDown: <path d="M6 9l6 6 6-6" />,
+  share: (
+    <>
+      <circle cx="18" cy="5.5" r="2.5" />
+      <circle cx="6" cy="12" r="2.5" />
+      <circle cx="18" cy="18.5" r="2.5" />
+      <path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1" />
+    </>
+  ),
   // A nilavilakku (Kerala oil lamp): flame, bowl, stem and base.
   lamp: (
     <>

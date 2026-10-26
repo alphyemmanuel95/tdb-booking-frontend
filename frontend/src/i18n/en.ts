@@ -47,6 +47,13 @@ export interface Messages {
     templesError: string;
     noTemples: string;
   };
+  share: {
+    button: string;
+    copied: string;
+    copyFailed: string;
+    /** Title of the shared link, e.g. "Sabarimala darshan slots for Sat, 31 Oct". */
+    title: (templeName: string, date: string) => string;
+  };
   slots: {
     legend: string;
     loading: string;
@@ -146,6 +153,12 @@ export const en: Messages = {
     loadingTemples: 'Loading temples…',
     templesError: 'Could not load temples',
     noTemples: 'No temples are open for booking right now.',
+  },
+  share: {
+    button: 'Share these slots',
+    copied: 'Link copied. Paste it into WhatsApp or a message to share.',
+    copyFailed: 'Could not copy the link. Copy it from the address bar instead.',
+    title: (templeName, date) => `${templeName} darshan slots for ${date}`,
   },
   slots: {
     legend: 'Choose a slot',
