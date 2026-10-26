@@ -9,6 +9,13 @@ export const routes: RouteObject[] = [
     element: <RootLayout />,
     children: [
       { index: true, element: <BookingPage /> },
+      {
+        path: 'my-bookings',
+        lazy: async () => {
+          const { MyBookingsPage } = await import('@/pages/MyBookingsPage');
+          return { Component: MyBookingsPage };
+        },
+      },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

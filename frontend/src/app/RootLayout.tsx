@@ -23,6 +23,9 @@ export function RootLayout() {
           <NavLink to="/" end className={navLinkClass}>
             Book darshan
           </NavLink>
+          <NavLink to="/my-bookings" className={navLinkClass}>
+            My bookings
+          </NavLink>
         </nav>
       </header>
       <main id="main" tabIndex={-1} className="mx-auto w-full max-w-4xl flex-1 px-4 py-8">

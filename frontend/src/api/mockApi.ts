@@ -38,7 +38,6 @@ export type MockApiErrorCode =
   | 'SLOT_STARTED'
   | 'SLOT_FULL'
   | 'NOT_ENOUGH_TICKETS'
-  | 'ALREADY_CANCELLED'
   | 'IDEMPOTENCY_CONFLICT';
 
 export class MockApiError extends Error {
@@ -200,9 +199,9 @@ export function cancelBooking(bookingId: string): Promise<Booking> {
   return simulate(() => {
     const booking = db.bookings.find((candidate) => candidate.id === bookingId);
     if (!booking) throw new MockApiError('NOT_FOUND', 'This booking does not exist.');
-    if (booking.status === 'cancelled') {
-      throw new MockApiError('ALREADY_CANCELLED', 'This booking is already cancelled.');
-    }
+    // Idempotent, like an HTTP DELETE: a retry after a lost response succeeds instead of failing
+    // with "already cancelled", and the tickets are not released twice.
+    if (booking.status === 'cancelled') return booking;
     const slot = findSlot(booking.slotId);
     if (hasStarted(slot)) throw new MockApiError('SLOT_STARTED', 'This slot has already started.');
 

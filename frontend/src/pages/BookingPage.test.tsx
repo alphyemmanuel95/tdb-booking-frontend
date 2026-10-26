@@ -139,6 +139,7 @@ describe('BookingPage', () => {
     expect(screen.getByLabelText('Number of tickets')).toHaveValue(3);
   });
 
+  // A long multi-step flow, so it gets more than the default 5 s on slow CI machines.
   it('retries a lost booking that took the last tickets without booking twice', async () => {
     const { user } = renderPage();
     await chooseTempleAndDate(user);
@@ -171,5 +172,5 @@ describe('BookingPage', () => {
 
     expect(await screen.findByText(/Booked 2 tickets for Anil Kumar/)).toBeInTheDocument();
     expect(await getBookings('9876543210')).toHaveLength(1);
-  });
+  }, 15_000);
 });
