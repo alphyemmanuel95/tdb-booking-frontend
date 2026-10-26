@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { configureMockApi, createBooking, getBookings, resetMockApi } from '@/api/mockApi';
 import { createTestSeed, TODAY, TOMORROW } from '@/test/bookingSeed';
-import { renderWithProviders, screen } from '@/test/test-utils';
+import { renderWithProviders, screen, within } from '@/test/test-utils';
 import { BookingPage } from './BookingPage';
 
 type User = ReturnType<typeof renderWithProviders>['user'];
@@ -137,5 +137,39 @@ describe('BookingPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Booking failed');
     expect(screen.getByLabelText('Name')).toHaveValue('Anil Kumar');
     expect(screen.getByLabelText('Number of tickets')).toHaveValue(3);
+  });
+
+  it('retries a lost booking that took the last tickets without booking twice', async () => {
+    const { user } = renderPage();
+    await chooseTempleAndDate(user);
+    await user.click(await screen.findByRole('radio', { name: /2 of 20 tickets remaining/ }));
+    await fillForm(user, '2');
+
+    // The server saves the booking, but the response is lost (and the slots refresh fails too).
+    configureMockApi({ failureRate: 1, lostResponseShare: 1 });
+    await user.click(screen.getByRole('button', { name: 'Book tickets' }));
+    const form = screen.getByRole('form', { name: 'Devotee details' });
+    expect(await within(form).findByRole('alert')).toHaveTextContent('Network error');
+
+    // The network recovers; reloading the slots now counts the saved booking, so the slot is full.
+    expect(await screen.findByText('Could not load slots')).toBeInTheDocument();
+    configureMockApi({ failureRate: 0 });
+    const [reloadSlots] = (await screen.findAllByRole('button', { name: 'Try again' })).filter(
+      (button) => !form.contains(button),
+    );
+    if (reloadSlots) await user.click(reloadSlots);
+    expect(
+      await screen.findByRole('radio', { name: /Full, no tickets left/, checked: true }),
+    ).toBeDisabled();
+
+    // The form is still there with the same details, and the retry is not blocked by the new count.
+    expect(screen.getByLabelText('Name')).toHaveValue('Anil Kumar');
+    // Editing (which clears the error) must not swap the form for "slot is now full".
+    await user.type(screen.getByLabelText('Name'), 'x{Backspace}');
+    expect(screen.queryByText(/This slot is now full/)).not.toBeInTheDocument();
+    await user.click(within(form).getByRole('button', { name: 'Book tickets' }));
+
+    expect(await screen.findByText(/Booked 2 tickets for Anil Kumar/)).toBeInTheDocument();
+    expect(await getBookings('9876543210')).toHaveLength(1);
   });
 });
