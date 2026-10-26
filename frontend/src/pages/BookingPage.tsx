@@ -29,6 +29,7 @@ export function BookingPage() {
     setTempleId(next.templeId ?? templeId);
     setDate(next.date ?? date);
     setSlotId(null);
+    setLastBooking(null);
   };
 
   return (
@@ -47,24 +48,23 @@ export function BookingPage() {
           changeSelection({ date: dateKey });
         }}
       />
-      {lastBooking && (
-        <p role="status" className="rounded-md bg-green-50 p-3 text-sm text-green-800">
-          Booked {lastBooking.tickets} {lastBooking.tickets === 1 ? 'ticket' : 'tickets'} for{' '}
-          {lastBooking.name} at {lastBooking.templeName} on {formatIstDate(lastBooking.date)},{' '}
-          {formatIstTime(lastBooking.startTime)}. Booking ID {lastBooking.id}.
-        </p>
-      )}
+      {/* Always rendered so screen readers announce the message when it is added. */}
+      <div role="status">
+        {lastBooking && (
+          <p className="rounded-md bg-green-50 p-3 text-sm text-green-800">
+            Booked {lastBooking.tickets} {lastBooking.tickets === 1 ? 'ticket' : 'tickets'} for{' '}
+            {lastBooking.name} at {lastBooking.templeName} on {formatIstDate(lastBooking.date)},{' '}
+            {formatIstTime(lastBooking.startTime)}. Booking ID {lastBooking.id}.
+          </p>
+        )}
+      </div>
       {templeId ? (
         <SlotList templeId={templeId} date={date} selectedSlotId={slotId} onSelect={setSlotId} />
       ) : (
         <p className="text-slate-600">Choose a temple to see its darshan slots.</p>
       )}
       {selectedSlot && (
-        <BookingForm
-          key={`${selectedSlot.id}-${String(selectedSlot.remaining)}`}
-          slot={selectedSlot}
-          onBooked={setLastBooking}
-        />
+        <BookingForm key={selectedSlot.id} slot={selectedSlot} onBooked={setLastBooking} />
       )}
     </section>
   );

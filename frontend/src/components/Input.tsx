@@ -14,7 +14,7 @@ interface FieldProps {
 
 const controlClass = (hasError: boolean) =>
   `block w-full rounded-md border px-3 py-2 text-sm shadow-sm ${
-    hasError ? 'border-red-600' : 'border-slate-300'
+    hasError ? 'border-red-600' : 'border-slate-500'
   }`;
 
 function useFieldIds(error?: string, hint?: string) {

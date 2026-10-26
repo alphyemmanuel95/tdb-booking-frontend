@@ -10,7 +10,7 @@ import { useCreateBookingMutation } from '../bookingApi';
 import { MAX_TICKETS_PER_BOOKING, makeBookingSchema, type BookingFormValues } from '../schema';
 
 interface BookingFormProps {
-  /** A bookable slot. Render with `key={slot.id + slot.remaining}` so limits stay in sync. */
+  /** A bookable slot. Render with `key={slot.id}` so switching slots starts a fresh form. */
   slot: Slot;
   onBooked: (booking: Booking) => void;
 }
@@ -22,6 +22,7 @@ export function BookingForm({ slot, onBooked }: BookingFormProps) {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<BookingFormValues>({
     resolver: zodResolver(schema),
@@ -31,6 +32,7 @@ export function BookingForm({ slot, onBooked }: BookingFormProps) {
   const handleValidSubmit = async (values: BookingFormValues) => {
     try {
       const { booking } = await createBooking({ slotId: slot.id, ...values }).unwrap();
+      reset();
       onBooked(booking);
     } catch {
       // The mutation's `error` state renders the message below; the typed values are kept.
@@ -50,10 +52,18 @@ export function BookingForm({ slot, onBooked }: BookingFormProps) {
       <h2 id="booking-form-heading" className="text-lg font-semibold">
         Devotee details
       </h2>
-      <Input label="Name" autoComplete="name" error={errors.name?.message} {...register('name')} />
+      <p className="text-sm text-slate-600">All fields are required.</p>
+      <Input
+        label="Name"
+        autoComplete="name"
+        aria-required
+        error={errors.name?.message}
+        {...register('name')}
+      />
       <Input
         label="Phone number"
         type="tel"
+        aria-required
         inputMode="numeric"
         autoComplete="tel-national"
         hint="10-digit mobile number"
@@ -63,6 +73,7 @@ export function BookingForm({ slot, onBooked }: BookingFormProps) {
       <Input
         label="Number of tickets"
         type="number"
+        aria-required
         inputMode="numeric"
         min={1}
         max={maxTickets}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { configureMockApi, getBookings, resetMockApi } from '@/api/mockApi';
+import { configureMockApi, createBooking, getBookings, resetMockApi } from '@/api/mockApi';
 import { createTestSeed, TODAY, TOMORROW } from '@/test/bookingSeed';
 import { renderWithProviders, screen } from '@/test/test-utils';
 import { BookingPage } from './BookingPage';
@@ -34,10 +34,41 @@ describe('BookingPage', () => {
     await fillForm(user, '3');
     await user.click(screen.getByRole('button', { name: 'Book tickets' }));
 
-    expect(await screen.findByRole('status')).toHaveTextContent(
-      'Booked 3 tickets for Anil Kumar at Sabarimala',
+    expect(
+      await screen.findByText(/Booked 3 tickets for Anil Kumar at Sabarimala/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /7 of 20 tickets remaining/ })).toBeChecked();
+    // The form stays on the slot, cleared, with the new limit.
+    expect(screen.getByLabelText('Name')).toHaveValue('');
+    expect(screen.getByLabelText('Number of tickets')).toHaveAccessibleDescription(
+      'Up to 7 tickets',
     );
-    expect(screen.getByRole('radio', { name: /7 of 20 tickets remaining/ })).toBeInTheDocument();
+  });
+
+  it('refreshes the slot when a booking is rejected because tickets sold meanwhile', async () => {
+    const { user } = renderPage();
+    await chooseTempleAndDate(user);
+    await user.click(await screen.findByRole('radio', { name: /10 of 20 tickets remaining/ }));
+    // Another devotee books 8 tickets after this page loaded the slot list.
+    await createBooking({ slotId: 'open', name: 'Other', phone: '9123456780', tickets: 8 });
+
+    await fillForm(user, '3');
+    await user.click(screen.getByRole('button', { name: 'Book tickets' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Only 2 tickets are left');
+    expect(
+      await screen.findByRole('radio', { name: /2 of 20 tickets remaining/, checked: true }),
+    ).toBeInTheDocument();
+  });
+
+  it('shows an error when temples fail to load and recovers on retry', async () => {
+    configureMockApi({ failureRate: 1 });
+    const { user } = renderPage();
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not load temples');
+    configureMockApi({ failureRate: 0 });
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByRole('combobox', { name: 'Temple' })).toBeInTheDocument();
   });
 
   it('does not allow more tickets than remain in the slot', async () => {
@@ -73,11 +104,12 @@ describe('BookingPage', () => {
     expect(await screen.findByText(/No darshan slots on this day/)).toBeInTheDocument();
   });
 
-  it('shows a loading state while temples load', () => {
-    configureMockApi({ minDelayMs: 60_000, maxDelayMs: 60_000 });
+  it('shows a loading state while temples load', async () => {
     renderPage();
 
-    expect(screen.getByRole('status')).toHaveTextContent('Loading temples…');
+    // The first render happens before the (zero-delay) mock call resolves.
+    expect(screen.getByText('Loading temples…')).toBeInTheDocument();
+    expect(await screen.findByRole('combobox', { name: 'Temple' })).toBeInTheDocument();
   });
 
   it('shows an error when slots fail to load and recovers on retry', async () => {
