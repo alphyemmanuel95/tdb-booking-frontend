@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMemo, useRef, type BaseSyntheticEvent } from 'react';
+import { useMemo, useRef, useState, type BaseSyntheticEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { getErrorMessage, isRetryableError } from '@/api/errors';
 import type { Booking, BookingRequest, Slot } from '@/api/types';
@@ -22,9 +22,17 @@ interface BookingAttempt {
 }
 
 export function BookingForm({ slot, onBooked }: BookingFormProps) {
-  const maxTickets = Math.min(slot.remaining, MAX_TICKETS_PER_BOOKING);
-  const schema = useMemo(() => makeBookingSchema(maxTickets), [maxTickets]);
+  const liveMaxTickets = Math.min(slot.remaining, MAX_TICKETS_PER_BOOKING);
   const [createBooking, { isLoading, error, reset: resetMutation }] = useCreateBookingMutation();
+  // The limit when the last attempt was sent. After a network error that booking may already
+  // exist on the server (and be counted in a refreshed `remaining`), so the retry is validated
+  // against the original limit; otherwise the same-key retry would be blocked and the devotee
+  // pushed into a second booking. Editing the form clears the error and restores the live limit.
+  const [attemptMaxTickets, setAttemptMaxTickets] = useState(liveMaxTickets);
+  const maxTickets = isRetryableError(error)
+    ? Math.max(liveMaxTickets, attemptMaxTickets)
+    : liveMaxTickets;
+  const schema = useMemo(() => makeBookingSchema(maxTickets), [maxTickets]);
   const {
     register,
     handleSubmit,
@@ -49,6 +57,7 @@ export function BookingForm({ slot, onBooked }: BookingFormProps) {
         ? attemptRef.current
         : { key: crypto.randomUUID(), details };
     attemptRef.current = attempt;
+    setAttemptMaxTickets(maxTickets);
     const request: BookingRequest = { slotId: slot.id, ...values, idempotencyKey: attempt.key };
     try {
       const { booking } = await createBooking(request).unwrap();
@@ -70,6 +79,10 @@ export function BookingForm({ slot, onBooked }: BookingFormProps) {
       isSubmittingRef.current = false;
     }
   };
+
+  if (maxTickets === 0) {
+    return <p className="text-slate-700">This slot is now full. Choose another slot.</p>;
+  }
 
   return (
     <form

@@ -40,7 +40,9 @@ export function BookingPage() {
   const now = useNow();
   const { currentData: slots } = useGetSlotsQuery({ templeId, date }, { skip: !templeId });
   const selectedSlot = slots?.find(
-    (slot) => slot.id === slotId && getSlotStatus(slot, now) === 'available',
+    // A slot that fills up while selected keeps its form, so a retry after a lost response
+    // (which may itself have taken the last tickets) is still possible.
+    (slot) => slot.id === slotId && getSlotStatus(slot, now) !== 'started',
   );
 
   // Each change pushes a history entry so Back returns to the previous selection.

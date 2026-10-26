@@ -134,7 +134,8 @@ export function createBooking(request: BookingRequest): Promise<BookingResult> {
             'This booking attempt was already used for different details.',
           );
         }
-        return previous.result;
+        // Same booking, but the slot as it is now: others may have booked since.
+        return { booking: previous.result.booking, slot: findSlot(request.slotId) };
       }
     }
 
