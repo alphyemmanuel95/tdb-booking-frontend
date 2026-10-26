@@ -27,17 +27,24 @@ export function RootLayout() {
           aria-hidden="true"
           className="h-1 bg-linear-to-r from-brand-700 via-gold-400 to-brand-700"
         />
-        <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-          <nav
-            aria-label={t.app.mainNav}
-            className="mr-auto flex flex-wrap items-center gap-x-4 gap-y-2"
-          >
-            <span className="flex items-center gap-2 text-lg font-bold text-brand-800">
-              <span className="flex size-9 items-center justify-center rounded-full bg-brand-50 text-brand-700 ring-1 ring-gold-200">
-                <Icon name="lamp" className="size-6" />
-              </span>
-              {t.app.brand}
+        {/* Two rows in every language and width: brand and language switch, then the nav, so
+            longer Malayalam labels never push the controls around. */}
+        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
+          <span className="flex items-center gap-2 text-lg font-bold text-brand-800">
+            <span className="flex size-9 items-center justify-center rounded-full bg-brand-50 text-brand-700 ring-1 ring-gold-200">
+              <Icon name="lamp" className="size-6" />
             </span>
+            {t.app.brand}
+          </span>
+          <div>
+            <LanguageSwitch
+              label={t.app.language}
+              value={language}
+              options={LANGUAGES}
+              onChange={setLanguage}
+            />
+          </div>
+          <nav aria-label={t.app.mainNav} className="flex w-full flex-wrap items-center gap-2">
             <NavLink to="/" end className={navLinkClass}>
               {t.nav.bookDarshan}
             </NavLink>
@@ -45,12 +52,6 @@ export function RootLayout() {
               {t.nav.myBookings}
             </NavLink>
           </nav>
-          <LanguageSwitch
-            label={t.app.language}
-            value={language}
-            options={LANGUAGES}
-            onChange={setLanguage}
-          />
         </div>
       </header>
       {/* Focused by the skip link only; it is not interactive, so it needs no focus outline. */}
