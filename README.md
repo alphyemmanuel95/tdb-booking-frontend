@@ -28,8 +28,10 @@ cp .env.example .env.local   # optional, see "Environment variables"
 npm run dev                  # http://localhost:5173
 ```
 
-There is no backend in this repo. The example page calls `/api/feedback`; in the dev server those
-requests fail and the page shows its error state, unless you point `VITE_DEV_PROXY_TARGET` at a backend.
+There is no backend. The app uses an in-memory mock API (`frontend/src/api/mockApi.ts`) that behaves
+like an unreliable network: every call takes a random 200–1500 ms and fails 20% of the time (change
+`DEFAULT_MOCK_API_CONFIG` to adjust). Data is seeded on load (3 temples, slots for the next 7 days, some
+full and some already started) and resets on page refresh.
 
 ## Scripts (run in `frontend/`)
 
@@ -50,76 +52,29 @@ requests fail and the page shows its error state, unless you point `VITE_DEV_PRO
 ## Project structure
 
 ```text
-.
-├── CLAUDE.md            # Instructions for Claude Code
-├── SPEC.md              # Current feature plan (generate with /spec)
-├── .claude/             # settings.json, skills/, agents/
-└── frontend/
-    ├── e2e/             # Playwright specs
-    └── src/
-        ├── app/         # store, typed hooks, routes, layout, env
-        ├── api/         # shared RTK Query baseApi, error helpers
-        ├── components/  # Button, Input/Textarea, Spinner, ErrorMessage
-        ├── features/    # feature folders (API, schema, components, tests)
-        ├── hooks/       # shared hooks
-        ├── pages/       # route-level pages
-        └── test/        # setup, test-utils, MSW handlers and server
+frontend/
+├── e2e/                 # Playwright specs
+└── src/
+    ├── app/             # store, typed hooks, routes, layout
+    ├── api/             # mock API + seed data, shared RTK Query baseApi, error helpers
+    ├── lib/             # IST date/time helpers
+    ├── components/      # Button, Input/Textarea, Spinner, ErrorMessage
+    ├── features/        # feature folders (API, schema, components, tests)
+    ├── hooks/           # shared hooks
+    ├── pages/           # route-level pages
+    └── test/            # setup, test-utils, test seed, MSW server
 ```
 
-Add API endpoints per feature with `baseApi.injectEndpoints(...)`. Use local state for component
-state; add Redux slices only for client state shared across features.
+Endpoints are added per feature with `baseApi.injectEndpoints(...)` and call the mock API through
+`queryFn`.
 
 ## Testing
 
-- **Vitest + RTL** run in jsdom with `src/test/setup.ts`. Use `renderWithProviders(ui, { route })` for
-  components and `renderApp({ route })` for the full route tree. Both create a fresh Redux store per call,
-  so RTK Query caches never leak between tests.
-- **MSW** intercepts all HTTP in tests. Default handlers live in `src/test/msw/handlers.ts`;
-  override per test with `server.use(feedbackHandlers.empty())` etc. Handlers reset after each test, and
-  any unhandled request fails the test, so tests cannot reach a live backend.
-- **Playwright** runs against the production build (`vite preview` on port 4173) and mocks the API with
-  `page.route`. Run `npm run test:e2e:install` once to download Chromium.
-
-## Environment variables
-
-See `frontend/.env.example`. Only `VITE_*` variables reach the browser bundle, so never put secrets in them.
-
-| Variable                | Default | Purpose                                    |
-| ----------------------- | ------- | ------------------------------------------ |
-| `VITE_API_BASE_URL`     | `/api`  | Base URL for RTK Query                     |
-| `VITE_DEV_PROXY_TARGET` | –       | Dev-only: proxy `/api` to this backend URL |
-
-## Claude Code harness
-
-`CLAUDE.md` holds project rules. `.claude/settings.json` pre-approves read-only checks (tests, lint,
-typecheck, build, `git status/diff/log`, `gh … view`), asks before installs, commits, pushes and PR actions,
-and denies force-push, `git reset --hard`, `git clean`, `npm publish` and reading `.env` files.
-Project `allow` rules take effect after you accept the workspace trust prompt.
-
-| Skill                  | Example                         | Purpose                                                 |
-| ---------------------- | ------------------------------- | ------------------------------------------------------- |
-| `/spec`                | `/spec Build a task board for…` | Requirements → `SPEC.md` plan, waits for approval       |
-| `/start-issue`         | `/start-issue 42`               | Read issue, plan, implement with tests, report          |
-| `/verify`              | `/verify`                       | Run all checks, report passed / failed / not run        |
-| `/raise-pr`            | `/raise-pr 42 main`             | Check scope and checks, then commit/push/PR on approval |
-| `/pr-review`           | `/pr-review 57`                 | Independent review, findings by severity                |
-| `/fix-review-comments` | `/fix-review-comments`          | Address unresolved review threads with tests            |
-
-`/start-issue`, `/raise-pr` and `/fix-review-comments` can only be started by you (they are not
-auto-invoked).
-
-Subagents in `.claude/agents/` (ask for them by name, e.g. "use the senior-ui-engineer agent to …"):
-
-| Agent                   | Edits files | Purpose                                                                 |
-| ----------------------- | ----------- | ----------------------------------------------------------------------- |
-| `senior-react-engineer` | yes         | Logic: features, routing, state, RTK Query, forms, hooks, with tests    |
-| `senior-ui-engineer`    | yes         | Presentation: components, Tailwind, responsive, WCAG 2.2 AA, with tests |
-
-The two engineer agents enforce strict standards (no `any`/unchecked casts/lint suppressions, required
-tests, all checks green before done) and never commit or push.
-
-The GitHub skills need the [GitHub CLI](https://cli.github.com/) authenticated (`gh auth login`) and a
-GitHub remote.
+- **Vitest + RTL** run in jsdom with `src/test/setup.ts`, which resets the mock API before every test
+  with no delay and no random failures. Tests opt in with `configureMockApi({ failureRate: 1 })` or a
+  long delay, and use `resetMockApi(createTestSeed())` for predictable data.
+- **MSW** has no handlers; it only makes any accidental real HTTP request fail the test.
+- **Playwright** smoke tests run against the production build. Run `npm run test:e2e:install` once.
 
 ## Troubleshooting
 
