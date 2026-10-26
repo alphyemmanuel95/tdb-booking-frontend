@@ -11,7 +11,12 @@ beforeAll(() => {
 // Fresh seed data and a fast, reliable mock API per test; tests opt in to delays or failures.
 beforeEach(() => {
   resetMockApi();
-  configureMockApi({ failureRate: 0, minDelayMs: 0, maxDelayMs: 0 });
+  configureMockApi({
+    failureRate: 0,
+    minDelayMs: 0,
+    maxDelayMs: 0,
+    getSlotsDelayMs: undefined,
+  });
 });
 afterEach(() => {
   server.resetHandlers();
