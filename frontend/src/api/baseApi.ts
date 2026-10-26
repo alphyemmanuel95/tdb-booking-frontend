@@ -1,13 +1,14 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { API_BASE_URL } from '@/app/env';
+import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
+import type { ApiError } from './errors';
 
 /**
  * Shared RTK Query API. Features add endpoints with `baseApi.injectEndpoints`
- * so there is a single cache, middleware and reducer.
+ * so there is a single cache, middleware and reducer. There is no HTTP backend:
+ * endpoints use `queryFn` to call the in-memory mock API.
  */
 export const baseApi = createApi({
   reducerPath: 'api',
-  baseQuery: fetchBaseQuery({ baseUrl: API_BASE_URL }),
-  tagTypes: ['Feedback'],
+  baseQuery: fakeBaseQuery<ApiError>(),
+  tagTypes: ['Slots', 'Bookings'],
   endpoints: () => ({}),
 });

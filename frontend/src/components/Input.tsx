@@ -1,4 +1,10 @@
-import { useId, type InputHTMLAttributes, type Ref, type TextareaHTMLAttributes } from 'react';
+import {
+  useId,
+  type InputHTMLAttributes,
+  type Ref,
+  type SelectHTMLAttributes,
+  type TextareaHTMLAttributes,
+} from 'react';
 
 interface FieldProps {
   label: string;
@@ -8,7 +14,7 @@ interface FieldProps {
 
 const controlClass = (hasError: boolean) =>
   `block w-full rounded-md border px-3 py-2 text-sm shadow-sm ${
-    hasError ? 'border-red-600' : 'border-slate-300'
+    hasError ? 'border-red-600' : 'border-slate-500'
   }`;
 
 function useFieldIds(error?: string, hint?: string) {
@@ -96,6 +102,32 @@ export function Textarea({
         className={controlClass(Boolean(error))}
         {...props}
       />
+      <FieldMessages hint={hint} hintId={hintId} error={error} errorId={errorId} />
+    </div>
+  );
+}
+
+export interface SelectProps extends FieldProps, SelectHTMLAttributes<HTMLSelectElement> {
+  ref?: Ref<HTMLSelectElement>;
+}
+
+/** Labelled native select, with the same hint/error wiring as `Input`. */
+export function Select({ label, error, hint, className = '', children, ...props }: SelectProps) {
+  const { id, hintId, errorId, describedBy } = useFieldIds(error, hint);
+  return (
+    <div className={className}>
+      <label htmlFor={id} className="mb-1 block text-sm font-medium text-slate-800">
+        {label}
+      </label>
+      <select
+        id={id}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={describedBy}
+        className={`${controlClass(Boolean(error))} bg-white`}
+        {...props}
+      >
+        {children}
+      </select>
       <FieldMessages hint={hint} hintId={hintId} error={error} errorId={errorId} />
     </div>
   );

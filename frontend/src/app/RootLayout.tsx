@@ -19,11 +19,9 @@ export function RootLayout() {
           aria-label="Main"
           className="mx-auto flex max-w-4xl flex-wrap items-center gap-2 px-4 py-3"
         >
+          <span className="mr-auto text-base font-bold text-slate-900">TDB Darshan</span>
           <NavLink to="/" end className={navLinkClass}>
-            Home
-          </NavLink>
-          <NavLink to="/feedback" className={navLinkClass}>
-            Feedback
+            Book darshan
           </NavLink>
         </nav>
       </header>
