@@ -1,4 +1,5 @@
 import { useI18n } from '@/i18n/useI18n';
+import { Banner } from './Banner';
 import { Button } from './Button';
 
 interface ErrorMessageProps {
@@ -11,14 +12,13 @@ interface ErrorMessageProps {
 export function ErrorMessage({ title, message, onRetry }: ErrorMessageProps) {
   const { t } = useI18n();
   return (
-    <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-4 text-red-900">
-      <p className="font-semibold">{title ?? t.common.somethingWentWrong}</p>
-      <p className="mt-1 text-sm">{message}</p>
+    <Banner role="alert" tone="error" title={title ?? t.common.somethingWentWrong}>
+      <p className="mt-1">{message}</p>
       {onRetry && (
         <Button variant="secondary" className="mt-3" onClick={onRetry}>
           {t.common.tryAgain}
         </Button>
       )}
-    </div>
+    </Banner>
   );
 }

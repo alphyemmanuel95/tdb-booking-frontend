@@ -26,8 +26,8 @@ export function Spinner({ label, size = 'md', decorative = false }: SpinnerProps
   );
   if (decorative) return circle;
   return (
-    <div role="status" className="flex items-center gap-2 text-slate-700">
-      {circle}
+    <div role="status" className="flex items-center gap-3 py-2 text-stone-700">
+      <span className="flex text-brand-700">{circle}</span>
       <span className="text-sm">{label ?? t.common.loading}</span>
     </div>
   );

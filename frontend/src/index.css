@@ -1,7 +1,35 @@
 @import 'tailwindcss';
 
+/*
+ * Theme: a warm Kerala-temple palette. Maroon/vermilion `brand` is the primary colour,
+ * saffron/gold `gold` the accent and `cream` the page background; neutrals use Tailwind's
+ * warm `stone` scale. Contrast (WCAG): white on brand-700 9.1:1, brand-700 on cream-50 8.8:1,
+ * stone-900 on cream-50 16.8:1, stone-600 on cream-50 7.3:1, gold-800 on gold-100 6.3:1.
+ */
+@theme {
+  --font-sans:
+    ui-sans-serif, system-ui, sans-serif, 'Noto Sans Malayalam', 'Nirmala UI', 'Kartika',
+    'Apple Color Emoji', 'Segoe UI Emoji';
+
+  --color-cream-50: #fffaf2;
+  --color-cream-100: #fbf1e1;
+
+  --color-brand-50: #fdf2ef;
+  --color-brand-100: #f9e0d9;
+  --color-brand-600: #a8321f;
+  --color-brand-700: #8c1d18;
+  --color-brand-800: #701612;
+  --color-brand-900: #521010;
+
+  --color-gold-100: #fcebc4;
+  --color-gold-200: #f8d98e;
+  --color-gold-300: #f3c35a;
+  --color-gold-400: #e9a825;
+  --color-gold-800: #7a4a0a;
+}
+
 @layer base {
   :focus-visible {
-    @apply outline-2 outline-offset-2 outline-blue-600;
+    @apply outline-2 outline-offset-2 outline-brand-700;
   }
 }
