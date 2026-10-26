@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMemo } from 'react';
+import { useMemo, useRef, type BaseSyntheticEvent } from 'react';
 import { useForm } from 'react-hook-form';
-import { getErrorMessage } from '@/api/errors';
-import type { Booking, Slot } from '@/api/types';
+import { getErrorMessage, isRetryableError } from '@/api/errors';
+import type { Booking, BookingRequest, Slot } from '@/api/types';
 import { Button } from '@/components/Button';
 import { ErrorMessage } from '@/components/ErrorMessage';
 import { Input } from '@/components/Input';
@@ -15,6 +15,12 @@ interface BookingFormProps {
   onBooked: (booking: Booking) => void;
 }
 
+/** The idempotency key of the current booking attempt and the details it was sent with. */
+interface BookingAttempt {
+  key: string;
+  details: string;
+}
+
 export function BookingForm({ slot, onBooked }: BookingFormProps) {
   const maxTickets = Math.min(slot.remaining, MAX_TICKETS_PER_BOOKING);
   const schema = useMemo(() => makeBookingSchema(maxTickets), [maxTickets]);
@@ -23,15 +29,30 @@ export function BookingForm({ slot, onBooked }: BookingFormProps) {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<BookingFormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name: '', phone: '', tickets: 1 },
   });
+  // Set synchronously, so a second click or Enter before React re-renders the disabled
+  // button cannot start another submit.
+  const isSubmittingRef = useRef(false);
+  // Kept after a failure so retrying the same details reuses the key and cannot book twice
+  // if the failed request did reach the server. Edited details get a new key.
+  const attemptRef = useRef<BookingAttempt | null>(null);
+  const isBusy = isSubmitting || isLoading;
 
   const handleValidSubmit = async (values: BookingFormValues) => {
+    const details = JSON.stringify([slot.id, values.name, values.phone, values.tickets]);
+    const attempt =
+      attemptRef.current?.details === details
+        ? attemptRef.current
+        : { key: crypto.randomUUID(), details };
+    attemptRef.current = attempt;
+    const request: BookingRequest = { slotId: slot.id, ...values, idempotencyKey: attempt.key };
     try {
-      const { booking } = await createBooking({ slotId: slot.id, ...values }).unwrap();
+      const { booking } = await createBooking(request).unwrap();
+      attemptRef.current = null;
       reset();
       onBooked(booking);
     } catch {
@@ -39,11 +60,22 @@ export function BookingForm({ slot, onBooked }: BookingFormProps) {
     }
   };
 
+  const handleFormSubmit = async (event?: BaseSyntheticEvent) => {
+    event?.preventDefault();
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    try {
+      await handleSubmit(handleValidSubmit)(event);
+    } finally {
+      isSubmittingRef.current = false;
+    }
+  };
+
   return (
     <form
       noValidate
       aria-labelledby="booking-form-heading"
-      onSubmit={(event) => void handleSubmit(handleValidSubmit)(event)}
+      onSubmit={(event) => void handleFormSubmit(event)}
       onChange={() => {
         if (error) resetMutation();
       }}
@@ -81,9 +113,15 @@ export function BookingForm({ slot, onBooked }: BookingFormProps) {
         error={errors.tickets?.message}
         {...register('tickets', { valueAsNumber: true })}
       />
-      {error && <ErrorMessage title="Booking failed" message={getErrorMessage(error)} />}
-      <Button type="submit" isLoading={isLoading}>
-        {isLoading ? 'Booking…' : 'Book tickets'}
+      {error && (
+        <ErrorMessage
+          title="Booking failed"
+          message={getErrorMessage(error)}
+          onRetry={isRetryableError(error) ? () => void handleFormSubmit() : undefined}
+        />
+      )}
+      <Button type="submit" isLoading={isBusy}>
+        {isBusy ? 'Booking…' : 'Book tickets'}
       </Button>
     </form>
   );
