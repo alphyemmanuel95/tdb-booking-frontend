@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
@@ -21,11 +21,17 @@ export function PhoneLookupForm({ isBusy, onLookup }: PhoneLookupFormProps) {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    trigger,
+    formState: { errors, isSubmitted },
   } = useForm<BookingLookupValues>({
     resolver: zodResolver(schema),
     defaultValues: { phone: '' },
   });
+  // After a submit, re-validate when the schema (language) changes so an error on screen
+  // switches language too; React Hook Form otherwise keeps the old message.
+  useEffect(() => {
+    if (isSubmitted) void trigger();
+  }, [schema, isSubmitted, trigger]);
 
   const handleValidSubmit = ({ phone }: BookingLookupValues) => {
     onLookup(phone);

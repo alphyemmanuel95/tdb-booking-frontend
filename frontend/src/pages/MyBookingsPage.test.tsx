@@ -186,6 +186,22 @@ describe('MyBookingsPage', () => {
     ).toBeInTheDocument();
     expect(within(item).getByText('Confirmed')).toBeInTheDocument();
   });
+  it('translates a phone error already on screen when the language changes', async () => {
+    resetMockApi(createTestSeed());
+    const { user } = renderApp({ route: '/my-bookings' });
+    await user.type(await screen.findByRole('textbox', { name: 'Phone number' }), '123');
+    await user.click(screen.getByRole('button', { name: 'Find bookings' }));
+    expect(screen.getByRole('textbox', { name: 'Phone number' })).toHaveAccessibleDescription(
+      'The 10-digit mobile number you booked with Enter a 10-digit Indian mobile number',
+    );
+
+    await user.click(screen.getByRole('button', { name: 'മലയാളം' }));
+
+    expect(await screen.findByRole('textbox', { name: 'ഫോൺ നമ്പർ' })).toHaveAccessibleDescription(
+      'ബുക്ക് ചെയ്യാൻ ഉപയോഗിച്ച 10 അക്ക മൊബൈൽ നമ്പർ സാധുവായ 10 അക്ക ഇന്ത്യൻ മൊബൈൽ നമ്പർ നൽകുക',
+    );
+  });
+
   it('follows the language switch: labels, buttons, statuses and IST dates in Malayalam', async () => {
     resetMockApi({ ...createTestSeed(), bookings: [makeBooking()] });
     const { user } = renderApp({ route: '/my-bookings' });
