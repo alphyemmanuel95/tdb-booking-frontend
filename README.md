@@ -24,7 +24,6 @@ Requires Node.js 20.19+ (tested with Node 22.18 / npm 10.9).
 ```bash
 cd frontend
 npm ci
-cp .env.example .env.local   # optional, see "Environment variables"
 npm run dev                  # http://localhost:5173
 ```
 
