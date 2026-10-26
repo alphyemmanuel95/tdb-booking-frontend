@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { configureMockApi, getBookings, resetMockApi } from '@/api/mockApi';
+import { configureMockApi, getBookings, getSlots, resetMockApi } from '@/api/mockApi';
 import type { Booking } from '@/api/types';
 import { istDateTime, formatIstDate } from '@/lib/datetime';
 import { createTestSeed, TODAY, TOMORROW } from '@/test/bookingSeed';
-import { renderWithProviders, screen, within } from '@/test/test-utils';
+import { renderWithProviders, screen, waitFor, within } from '@/test/test-utils';
 import { MyBookingsPage } from './MyBookingsPage';
 
 const PHONE = '9876543210';
@@ -119,6 +119,38 @@ describe('MyBookingsPage', () => {
     );
     expect(within(item).getByText('Confirmed')).toBeInTheDocument();
     expect(within(item).getByRole('button', { name: 'Cancel booking' })).toBeEnabled();
+  });
+
+  it('cancels on retry when the first cancel reached the server but its response was lost', async () => {
+    const { user } = renderPage([makeBooking()]);
+    await lookUp(user);
+    const item = await screen.findByRole('listitem', { name: 'Sabarimala' });
+
+    // The server cancels the booking, but the devotee only sees a network error.
+    configureMockApi({
+      failureRate: 1,
+      lostResponseShare: 1,
+      minDelayMs: SLOW_SERVER_MS,
+      maxDelayMs: SLOW_SERVER_MS,
+    });
+    await user.click(within(item).getByRole('button', { name: 'Cancel booking' }));
+    await user.click(within(item).getByRole('button', { name: 'Yes, cancel booking' }));
+    expect(await within(item).findByRole('alert')).toHaveTextContent('Network error');
+    expect(within(item).getByText('Confirmed')).toBeInTheDocument();
+
+    // Retrying succeeds rather than failing with "already cancelled".
+    configureMockApi({ failureRate: 0 });
+    await user.click(within(item).getByRole('button', { name: 'Cancel booking' }));
+    await user.click(within(item).getByRole('button', { name: 'Yes, cancel booking' }));
+    // This read is queued after the retry with the same latency, so it resolves after it.
+    const open = (await getSlots('sabarimala', TOMORROW)).find((slot) => slot.id === 'open');
+    // The 3 tickets went back to the slot exactly once (10 + 3).
+    expect(open?.remaining).toBe(13);
+    // With the server's answer in, the booking is still cancelled and no error is shown.
+    await waitFor(() => {
+      expect(within(item).getByText('Cancelled')).toBeInTheDocument();
+    });
+    expect(within(item).queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('keeps the booking when the user backs out, with focus handled for keyboard users', async () => {
