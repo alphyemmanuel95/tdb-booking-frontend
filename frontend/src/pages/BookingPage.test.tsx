@@ -164,7 +164,10 @@ describe('BookingPage', () => {
 
     // The form is still there with the same details, and the retry is not blocked by the new count.
     expect(screen.getByLabelText('Name')).toHaveValue('Anil Kumar');
-    await user.click(within(form).getByRole('button', { name: 'Try again' }));
+    // Editing (which clears the error) must not swap the form for "slot is now full".
+    await user.type(screen.getByLabelText('Name'), 'x{Backspace}');
+    expect(screen.queryByText(/This slot is now full/)).not.toBeInTheDocument();
+    await user.click(within(form).getByRole('button', { name: 'Book tickets' }));
 
     expect(await screen.findByText(/Booked 2 tickets for Anil Kumar/)).toBeInTheDocument();
     expect(await getBookings('9876543210')).toHaveLength(1);

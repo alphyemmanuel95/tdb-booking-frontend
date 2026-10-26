@@ -24,14 +24,13 @@ interface BookingAttempt {
 export function BookingForm({ slot, onBooked }: BookingFormProps) {
   const liveMaxTickets = Math.min(slot.remaining, MAX_TICKETS_PER_BOOKING);
   const [createBooking, { isLoading, error, reset: resetMutation }] = useCreateBookingMutation();
-  // The limit when the last attempt was sent. After a network error that booking may already
-  // exist on the server (and be counted in a refreshed `remaining`), so the retry is validated
-  // against the original limit; otherwise the same-key retry would be blocked and the devotee
-  // pushed into a second booking. Editing the form clears the error and restores the live limit.
-  const [attemptMaxTickets, setAttemptMaxTickets] = useState(liveMaxTickets);
-  const maxTickets = isRetryableError(error)
-    ? Math.max(liveMaxTickets, attemptMaxTickets)
-    : liveMaxTickets;
+  // The limit an unresolved attempt was sent with. After a network error that booking may
+  // already exist on the server (and be counted in a refreshed `remaining`), so until the
+  // attempt succeeds or is rejected by the server, the form keeps the original limit; otherwise
+  // the same-key retry would be blocked and the devotee pushed into a second booking.
+  const [pendingAttemptMax, setPendingAttemptMax] = useState<number | null>(null);
+  const maxTickets =
+    pendingAttemptMax === null ? liveMaxTickets : Math.max(liveMaxTickets, pendingAttemptMax);
   const schema = useMemo(() => makeBookingSchema(maxTickets), [maxTickets]);
   const {
     register,
@@ -57,16 +56,19 @@ export function BookingForm({ slot, onBooked }: BookingFormProps) {
         ? attemptRef.current
         : { key: crypto.randomUUID(), details };
     attemptRef.current = attempt;
-    setAttemptMaxTickets(maxTickets);
+    setPendingAttemptMax(maxTickets);
     const request: BookingRequest = { slotId: slot.id, ...values, idempotencyKey: attempt.key };
-    try {
-      const { booking } = await createBooking(request).unwrap();
+    const result = await createBooking(request);
+    if (result.data) {
       attemptRef.current = null;
+      setPendingAttemptMax(null);
       reset();
-      onBooked(booking);
-    } catch {
-      // The mutation's `error` state renders the message below; the typed values are kept.
+      onBooked(result.data.booking);
+    } else if (!isRetryableError(result.error)) {
+      // The server rejected it, so nothing was booked: back to the live limit.
+      setPendingAttemptMax(null);
     }
+    // Otherwise the mutation's `error` state renders the message; the typed values are kept.
   };
 
   const handleFormSubmit = async (event?: BaseSyntheticEvent) => {
