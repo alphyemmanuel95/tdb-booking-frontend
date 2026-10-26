@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ml } from '@/i18n/ml';
 import { makeBookingSchema } from './schema';
 
 const valid = { name: 'Anil Kumar', phone: '9876543210', tickets: 2 };
@@ -21,5 +22,13 @@ describe('booking schema', () => {
 
     expect(result.success).toBe(false);
     expect(result.error?.issues[0]?.message).toBe(message);
+  });
+});
+
+describe('booking schema messages', () => {
+  it('uses the given language for errors', () => {
+    const result = makeBookingSchema(5, ml.validation).safeParse({ ...valid, tickets: 6 });
+
+    expect(result.error?.issues[0]?.message).toBe('ഈ സമയത്ത് പരമാവധി 5 ടിക്കറ്റ് ബുക്ക് ചെയ്യാം');
   });
 });

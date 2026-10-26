@@ -1,11 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { getErrorMessage } from '@/api/errors';
 import type { Booking, Slot } from '@/api/types';
 import { Button } from '@/components/Button';
 import { ErrorMessage } from '@/components/ErrorMessage';
 import { Input } from '@/components/Input';
+import { useI18n } from '@/i18n/useI18n';
 import { useCreateBookingMutation } from '../bookingApi';
 import { MAX_TICKETS_PER_BOOKING, makeBookingSchema, type BookingFormValues } from '../schema';
 
@@ -17,7 +18,12 @@ interface BookingFormProps {
 
 export function BookingForm({ slot, onBooked }: BookingFormProps) {
   const maxTickets = Math.min(slot.remaining, MAX_TICKETS_PER_BOOKING);
-  const schema = useMemo(() => makeBookingSchema(maxTickets), [maxTickets]);
+  const { t } = useI18n();
+  const headingId = useId();
+  const schema = useMemo(
+    () => makeBookingSchema(maxTickets, t.validation),
+    [maxTickets, t.validation],
+  );
   const [createBooking, { isLoading, error, reset: resetMutation }] = useCreateBookingMutation();
   const {
     register,
@@ -42,48 +48,48 @@ export function BookingForm({ slot, onBooked }: BookingFormProps) {
   return (
     <form
       noValidate
-      aria-labelledby="booking-form-heading"
+      aria-labelledby={headingId}
       onSubmit={(event) => void handleSubmit(handleValidSubmit)(event)}
       onChange={() => {
         if (error) resetMutation();
       }}
       className="space-y-4"
     >
-      <h2 id="booking-form-heading" className="text-lg font-semibold">
-        Devotee details
+      <h2 id={headingId} className="text-lg font-semibold">
+        {t.bookingForm.heading}
       </h2>
-      <p className="text-sm text-slate-600">All fields are required.</p>
+      <p className="text-sm text-slate-600">{t.bookingForm.allRequired}</p>
       <Input
-        label="Name"
+        label={t.bookingForm.name}
         autoComplete="name"
         aria-required
         error={errors.name?.message}
         {...register('name')}
       />
       <Input
-        label="Phone number"
+        label={t.bookingForm.phone}
         type="tel"
         aria-required
         inputMode="numeric"
         autoComplete="tel-national"
-        hint="10-digit mobile number"
+        hint={t.bookingForm.phoneHint}
         error={errors.phone?.message}
         {...register('phone')}
       />
       <Input
-        label="Number of tickets"
+        label={t.bookingForm.tickets}
         type="number"
         aria-required
         inputMode="numeric"
         min={1}
         max={maxTickets}
-        hint={`Up to ${String(maxTickets)} tickets`}
+        hint={t.bookingForm.ticketsHint(maxTickets)}
         error={errors.tickets?.message}
         {...register('tickets', { valueAsNumber: true })}
       />
-      {error && <ErrorMessage title="Booking failed" message={getErrorMessage(error)} />}
+      {error && <ErrorMessage title={t.bookingForm.failed} message={getErrorMessage(error)} />}
       <Button type="submit" isLoading={isLoading}>
-        {isLoading ? 'Booking…' : 'Book tickets'}
+        {isLoading ? t.bookingForm.submitting : t.bookingForm.submit}
       </Button>
     </form>
   );

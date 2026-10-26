@@ -3,7 +3,8 @@ import type { Slot } from '@/api/types';
 import { ErrorMessage } from '@/components/ErrorMessage';
 import { Spinner } from '@/components/Spinner';
 import { useNow } from '@/hooks/useNow';
-import { formatIstTime } from '@/lib/datetime';
+import type { Messages } from '@/i18n/en';
+import { useI18n } from '@/i18n/useI18n';
 import { useGetSlotsQuery } from '../bookingApi';
 import { getSlotStatus, type SlotStatus } from '../slotStatus';
 
@@ -14,14 +15,14 @@ interface SlotListProps {
   onSelect: (slotId: string) => void;
 }
 
-function describeSlotStatus(slot: Slot, status: SlotStatus): string {
+function describeSlotStatus(slot: Slot, status: SlotStatus, t: Messages['slots']): string {
   switch (status) {
     case 'available':
-      return `${String(slot.remaining)} of ${String(slot.capacity)} tickets remaining`;
+      return t.remaining(slot.remaining, slot.capacity);
     case 'full':
-      return 'Full, no tickets left';
+      return t.full;
     case 'started':
-      return 'Already started, booking closed';
+      return t.started;
   }
 }
 
@@ -29,24 +30,25 @@ export function SlotList({ templeId, date, selectedSlotId, onSelect }: SlotListP
   // `currentData` is only ever the result for these exact args, never a previous selection's.
   const { currentData, error, isFetching, refetch } = useGetSlotsQuery({ templeId, date });
   const now = useNow();
+  const { t, formatTime } = useI18n();
 
-  if (!currentData && isFetching) return <Spinner label="Loading slots…" />;
+  if (!currentData && isFetching) return <Spinner label={t.slots.loading} />;
   if (error) {
     return (
       <ErrorMessage
-        title="Could not load slots"
+        title={t.slots.error}
         message={getErrorMessage(error)}
         onRetry={() => void refetch()}
       />
     );
   }
   if (!currentData || currentData.length === 0) {
-    return <p className="text-slate-600">No darshan slots on this day. Try another date.</p>;
+    return <p className="text-slate-600">{t.slots.empty}</p>;
   }
 
   return (
     <fieldset>
-      <legend className="mb-2 text-sm font-medium text-slate-800">Choose a slot</legend>
+      <legend className="mb-2 text-sm font-medium text-slate-800">{t.slots.legend}</legend>
       <ul className="grid gap-2 sm:grid-cols-2">
         {currentData.map((slot) => {
           const status = getSlotStatus(slot, now);
@@ -70,8 +72,9 @@ export function SlotList({ templeId, date, selectedSlotId, onSelect }: SlotListP
                     onSelect(slot.id);
                   }}
                 />
-                <span className="font-medium">{formatIstTime(slot.startTime)}</span>
-                <span className="text-sm">{describeSlotStatus(slot, status)}</span>
+                {/* The space keeps the radio's name readable: "9:00 am 10 of 20 tickets…". */}
+                <span className="font-medium">{formatTime(slot.startTime)}</span>{' '}
+                <span className="text-sm">{describeSlotStatus(slot, status, t.slots)}</span>
               </label>
             </li>
           );
