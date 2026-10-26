@@ -19,8 +19,9 @@ export const bookingApi = baseApi.injectEndpoints({
     }),
     createBooking: build.mutation<BookingResult, BookingRequest>({
       queryFn: (request) => toQueryResult(() => mockApi.createBooking(request)),
-      // A rejected booking (e.g. tickets sold meanwhile) means the cached counts may be stale.
-      invalidatesTags: (_result, error) => (error ? ['Slots'] : []),
+      // A rejected booking (e.g. tickets sold meanwhile) means the cached counts may be stale;
+      // a successful one must show up in My bookings.
+      invalidatesTags: (_result, error) => (error ? ['Slots'] : ['Bookings']),
       // Update the cached slot from the server's answer instead of refetching,
       // so the new remaining count shows even if a refetch would randomly fail.
       async onQueryStarted(_request, { dispatch, queryFulfilled }) {
