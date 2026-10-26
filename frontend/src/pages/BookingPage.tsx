@@ -1,10 +1,11 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import type { Booking } from '@/api/types';
 import { Banner } from '@/components/Banner';
 import { Card } from '@/components/Card';
 import { Icon } from '@/components/Icon';
 import { SectionHeading } from '@/components/SectionHeading';
-import { useGetSlotsQuery } from '@/features/booking/bookingApi';
+import { useGetSlotsQuery, useGetTemplesQuery } from '@/features/booking/bookingApi';
 import { BookingForm } from '@/features/booking/components/BookingForm';
 import { SlotList } from '@/features/booking/components/SlotList';
 import { TempleDateFilters } from '@/features/booking/components/TempleDateFilters';
@@ -15,17 +16,34 @@ import { useI18n } from '@/i18n/useI18n';
 import { nextIstDateKeys } from '@/lib/datetime';
 
 const BOOKING_DAYS = 7;
+const TEMPLE_PARAM = 'temple';
+const DATE_PARAM = 'date';
 
 export function BookingPage() {
   const { t, formatDate, formatTime } = useI18n();
   const headingId = useId();
   useDocumentTitle(t.booking.title);
   const dates = useMemo(() => nextIstDateKeys(BOOKING_DAYS), []);
-  const [templeId, setTempleId] = useState('');
-  const [date, setDate] = useState(dates[0] ?? '');
+  // Temple and date live in the URL so they survive a refresh, can be shared and work with Back.
+  // Unknown or out-of-range values fall back to "no temple" and today rather than failing.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { data: temples } = useGetTemplesQuery(undefined);
+  const templeParam = searchParams.get(TEMPLE_PARAM) ?? '';
+  const templeId = temples?.some((temple) => temple.id === templeParam) ? templeParam : '';
+  const dateParam = searchParams.get(DATE_PARAM) ?? '';
+  const date = dates.includes(dateParam) ? dateParam : (dates[0] ?? '');
+
   const [slotId, setSlotId] = useState<string | null>(null);
   const [lastBooking, setLastBooking] = useState<Booking | null>(null);
   const confirmationRef = useRef<HTMLParagraphElement>(null);
+  // A new selection (including one reached with Back/Forward) clears the chosen slot and message.
+  const selectionKey = `${templeId}|${date}`;
+  const [previousSelectionKey, setPreviousSelectionKey] = useState(selectionKey);
+  if (selectionKey !== previousSelectionKey) {
+    setPreviousSelectionKey(selectionKey);
+    setSlotId(null);
+    setLastBooking(null);
+  }
 
   // After a booking the form is cleared, so move focus to the result: screen readers read it
   // straight away, and the next Tab continues to the slot list to book again.
@@ -36,14 +54,21 @@ export function BookingPage() {
   const now = useNow();
   const { currentData: slots } = useGetSlotsQuery({ templeId, date }, { skip: !templeId });
   const selectedSlot = slots?.find(
-    (slot) => slot.id === slotId && getSlotStatus(slot, now) === 'available',
+    // A slot that fills up while selected keeps its form, so a retry after a lost response
+    // (which may itself have taken the last tickets) is still possible.
+    (slot) => slot.id === slotId && getSlotStatus(slot, now) !== 'started',
   );
 
+  // Each change pushes a history entry so Back returns to the previous selection.
   const changeSelection = (next: { templeId?: string; date?: string }) => {
-    setTempleId(next.templeId ?? templeId);
-    setDate(next.date ?? date);
-    setSlotId(null);
-    setLastBooking(null);
+    setSearchParams((previous) => {
+      const params = new URLSearchParams(previous);
+      const nextTempleId = next.templeId ?? templeId;
+      if (nextTempleId) params.set(TEMPLE_PARAM, nextTempleId);
+      else params.delete(TEMPLE_PARAM);
+      params.set(DATE_PARAM, next.date ?? date);
+      return params;
+    });
   };
 
   return (

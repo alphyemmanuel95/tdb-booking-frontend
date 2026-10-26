@@ -9,9 +9,16 @@ beforeAll(() => {
   server.listen({ onUnhandledRequest: 'error' });
 });
 // Fresh seed data and a fast, reliable mock API per test; tests opt in to delays or failures.
+// Failures happen before the server does any work unless a test opts in to lost responses.
 beforeEach(() => {
   resetMockApi();
-  configureMockApi({ failureRate: 0, minDelayMs: 0, maxDelayMs: 0 });
+  configureMockApi({
+    failureRate: 0,
+    lostResponseShare: 0,
+    minDelayMs: 0,
+    maxDelayMs: 0,
+    getSlotsDelayMs: undefined,
+  });
 });
 afterEach(() => {
   server.resetHandlers();

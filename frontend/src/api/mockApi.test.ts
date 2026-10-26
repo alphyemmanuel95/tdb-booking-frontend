@@ -65,6 +65,57 @@ describe('mock API', () => {
     await expect(getTemples()).rejects.toThrow('Network error');
   });
 
+  it('fails network calls before the work by default in tests', async () => {
+    resetMockApi(createTestSeed());
+    configureMockApi({ failureRate: 1 });
+
+    await expect(createBooking(request)).rejects.toMatchObject({ code: 'NETWORK' });
+    configureMockApi({ failureRate: 0 });
+    expect(await getBookings('9876543210')).toHaveLength(0);
+  });
+
+  it('can lose the response after the booking was made', async () => {
+    resetMockApi(createTestSeed());
+    configureMockApi({ failureRate: 1, lostResponseShare: 1 });
+
+    await expect(createBooking(request)).rejects.toMatchObject({ code: 'NETWORK' });
+    configureMockApi({ failureRate: 0 });
+    expect(await getBookings('9876543210')).toHaveLength(1);
+  });
+
+  it('replays the original booking for a repeated idempotency key', async () => {
+    resetMockApi(createTestSeed());
+    const keyed = { ...request, idempotencyKey: 'attempt-1' };
+
+    const first = await createBooking(keyed);
+    const replay = await createBooking(keyed);
+
+    expect(replay).toEqual(first);
+    expect(await getBookings('9876543210')).toHaveLength(1);
+    const open = (await getSlots('sabarimala', TOMORROW)).find((s) => s.id === 'open');
+    expect(open?.remaining).toBe(7);
+  });
+
+  it('rejects a reused idempotency key for different details', async () => {
+    resetMockApi(createTestSeed());
+    await createBooking({ ...request, idempotencyKey: 'attempt-1' });
+
+    await expect(
+      createBooking({ ...request, tickets: 2, idempotencyKey: 'attempt-1' }),
+    ).rejects.toMatchObject({ code: 'IDEMPOTENCY_CONFLICT' });
+    expect(await getBookings('9876543210')).toHaveLength(1);
+  });
+
+  it('runs a keyed request again after it was rejected', async () => {
+    resetMockApi(createTestSeed());
+    const keyed = { ...request, slotId: 'few-left', tickets: 2, idempotencyKey: 'attempt-1' };
+    await createBooking({ ...keyed, idempotencyKey: 'other' });
+
+    await expect(createBooking(keyed)).rejects.toMatchObject({ code: 'SLOT_FULL' });
+    await cancelBooking('BK-0001');
+    expect(await createBooking(keyed)).toMatchObject({ booking: { id: 'BK-0002' } });
+  });
+
   it('cancels a booking and releases its tickets', async () => {
     resetMockApi(createTestSeed());
     const { booking } = await createBooking(request);

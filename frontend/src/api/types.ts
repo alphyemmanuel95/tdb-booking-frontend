@@ -36,6 +36,11 @@ export interface BookingRequest {
   name: string;
   phone: string;
   tickets: number;
+  /**
+   * Client-generated ID for one booking attempt (like an `Idempotency-Key` header).
+   * Retrying with the same key returns the original booking instead of booking again.
+   */
+  idempotencyKey?: string;
 }
 
 export interface BookingResult {

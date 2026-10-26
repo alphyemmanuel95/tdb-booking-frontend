@@ -41,6 +41,9 @@ export function RootLayout() {
             <NavLink to="/" end className={navLinkClass}>
               {t.nav.bookDarshan}
             </NavLink>
+            <NavLink to="/my-bookings" className={navLinkClass}>
+              {t.nav.myBookings}
+            </NavLink>
           </nav>
           <LanguageSwitch
             label={t.app.language}

@@ -1,3 +1,5 @@
+import type { BookingStatus } from '@/api/types';
+
 /** Details shown in the booking confirmation; dates and times arrive already formatted. */
 export interface BookingConfirmation {
   tickets: number;
@@ -23,6 +25,7 @@ export interface Messages {
   };
   nav: {
     bookDarshan: string;
+    myBookings: string;
   };
   common: {
     loading: string;
@@ -64,6 +67,7 @@ export interface Messages {
     failed: string;
     submit: string;
     submitting: string;
+    slotFull: string;
   };
   validation: {
     nameTooShort: string;
@@ -73,6 +77,32 @@ export interface Messages {
     ticketsWhole: string;
     ticketsMin: string;
     ticketsMax: (max: number) => string;
+  };
+  myBookings: {
+    title: string;
+    intro: string;
+    lookupForm: string;
+    phone: string;
+    phoneHint: string;
+    find: string;
+    loading: string;
+    loadError: string;
+    empty: string;
+    listLabel: string;
+    date: string;
+    startTime: string;
+    /** A formatted clock time marked as Indian Standard Time. */
+    timeIst: (time: string) => string;
+    tickets: string;
+    status: string;
+    statuses: Record<BookingStatus, string>;
+    bookingId: string;
+    cancel: string;
+    confirmPrompt: string;
+    confirmCancel: string;
+    keep: string;
+    cancelFailed: string;
+    started: string;
   };
   notFound: {
     title: string;
@@ -94,6 +124,7 @@ export const en: Messages = {
   },
   nav: {
     bookDarshan: 'Book darshan',
+    myBookings: 'My bookings',
   },
   common: {
     loading: 'Loading…',
@@ -136,6 +167,7 @@ export const en: Messages = {
     failed: 'Booking failed',
     submit: 'Book tickets',
     submitting: 'Booking…',
+    slotFull: 'This slot is now full. Choose another slot.',
   },
   validation: {
     nameTooShort: 'Name must be at least 2 characters',
@@ -145,6 +177,32 @@ export const en: Messages = {
     ticketsWhole: 'Tickets must be a whole number',
     ticketsMin: 'Book at least 1 ticket',
     ticketsMax: (max) => `You can book at most ${tickets(max)} in this slot`,
+  },
+  myBookings: {
+    title: 'My bookings',
+    intro:
+      'Enter the mobile number you booked with to see or cancel your bookings. All times are in IST.',
+    lookupForm: 'Find your bookings',
+    phone: 'Phone number',
+    phoneHint: 'The 10-digit mobile number you booked with',
+    find: 'Find bookings',
+    loading: 'Loading bookings…',
+    loadError: 'Could not load bookings',
+    empty: 'No bookings found for this phone number.',
+    listLabel: 'Your bookings',
+    date: 'Date',
+    startTime: 'Start time',
+    timeIst: (time) => `${time} IST`,
+    tickets: 'Tickets',
+    status: 'Status',
+    statuses: { confirmed: 'Confirmed', cancelled: 'Cancelled' },
+    bookingId: 'Booking ID',
+    cancel: 'Cancel booking',
+    confirmPrompt: 'Cancel this booking? The tickets will be released.',
+    confirmCancel: 'Yes, cancel booking',
+    keep: 'Keep booking',
+    cancelFailed: 'Cancellation failed',
+    started: 'This darshan has already started, so the booking can no longer be cancelled.',
   },
   notFound: {
     title: 'Page not found',
