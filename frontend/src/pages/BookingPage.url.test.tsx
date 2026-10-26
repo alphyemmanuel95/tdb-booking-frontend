@@ -80,6 +80,24 @@ describe('BookingPage temple and date in the URL', () => {
     expect(await templeSelect()).toHaveValue('guruvayur');
   });
 
+  it('going back to a slow selection never shows the other selection’s slots for it', async () => {
+    // A = Sabarimala (slow), B = Guruvayur (fast, no slots).
+    configureMockApi({
+      getSlotsDelayMs: (templeId) => (templeId === 'sabarimala' ? 300 : 20),
+    });
+    const { user } = renderAt(`/?temple=sabarimala&date=${TOMORROW}`);
+
+    await user.selectOptions(await templeSelect(), 'Guruvayur');
+    expect(await screen.findByText(/No darshan slots on this day/)).toBeInTheDocument();
+
+    // Back to A while its first request is still in flight: B's result must not be shown for A.
+    await user.selectOptions(await templeSelect(), 'Sabarimala');
+    expect(screen.getByText('Loading slots…')).toBeInTheDocument();
+    expect(screen.queryByText(/No darshan slots on this day/)).not.toBeInTheDocument();
+
+    expect(await screen.findByRole('radio', { name: /10 of 20 tickets remaining/ })).toBeEnabled();
+  });
+
   it('does not keep showing the previous selection while the new one loads', async () => {
     configureMockApi({ getSlotsDelayMs: (templeId) => (templeId === 'guruvayur' ? 200 : 0) });
     const { user } = renderAt(`/?temple=sabarimala&date=${TOMORROW}`);
