@@ -1,13 +1,9 @@
-import { useId } from 'react';
 import { getErrorMessage } from '@/api/errors';
 import { ErrorMessage } from '@/components/ErrorMessage';
+import { Select } from '@/components/Input';
 import { Spinner } from '@/components/Spinner';
 import { formatIstDate } from '@/lib/datetime';
 import { useGetTemplesQuery } from '../bookingApi';
-
-const selectClass =
-  'block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm';
-const labelClass = 'mb-1 block text-sm font-medium text-slate-800';
 
 interface TempleDateFiltersProps {
   templeId: string;
@@ -24,7 +20,6 @@ export function TempleDateFilters({
   onTempleChange,
   onDateChange,
 }: TempleDateFiltersProps) {
-  const id = useId();
   const { data: temples, error, isLoading, refetch } = useGetTemplesQuery(undefined);
 
   if (isLoading) return <Spinner label="Loading temples…" />;
@@ -43,45 +38,33 @@ export function TempleDateFilters({
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <div>
-        <label htmlFor={`${id}-temple`} className={labelClass}>
-          Temple
-        </label>
-        <select
-          id={`${id}-temple`}
-          className={selectClass}
-          value={templeId}
-          onChange={(event) => {
-            onTempleChange(event.target.value);
-          }}
-        >
-          <option value="">Select a temple</option>
-          {temples.map((temple) => (
-            <option key={temple.id} value={temple.id}>
-              {temple.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label htmlFor={`${id}-date`} className={labelClass}>
-          Date
-        </label>
-        <select
-          id={`${id}-date`}
-          className={selectClass}
-          value={date}
-          onChange={(event) => {
-            onDateChange(event.target.value);
-          }}
-        >
-          {dates.map((dateKey) => (
-            <option key={dateKey} value={dateKey}>
-              {formatIstDate(dateKey)}
-            </option>
-          ))}
-        </select>
-      </div>
+      <Select
+        label="Temple"
+        value={templeId}
+        onChange={(event) => {
+          onTempleChange(event.target.value);
+        }}
+      >
+        <option value="">Select a temple</option>
+        {temples.map((temple) => (
+          <option key={temple.id} value={temple.id}>
+            {temple.name}
+          </option>
+        ))}
+      </Select>
+      <Select
+        label="Date"
+        value={date}
+        onChange={(event) => {
+          onDateChange(event.target.value);
+        }}
+      >
+        {dates.map((dateKey) => (
+          <option key={dateKey} value={dateKey}>
+            {formatIstDate(dateKey)}
+          </option>
+        ))}
+      </Select>
     </div>
   );
 }
