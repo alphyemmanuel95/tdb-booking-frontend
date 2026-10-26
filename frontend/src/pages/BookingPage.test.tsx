@@ -35,7 +35,7 @@ describe('BookingPage', () => {
     await user.click(screen.getByRole('button', { name: 'Book tickets' }));
 
     expect(await screen.findByRole('status')).toHaveTextContent(
-      'Booked 3 ticket(s) for Anil Kumar at Sabarimala',
+      'Booked 3 tickets for Anil Kumar at Sabarimala',
     );
     expect(screen.getByRole('radio', { name: /7 of 20 tickets remaining/ })).toBeInTheDocument();
   });

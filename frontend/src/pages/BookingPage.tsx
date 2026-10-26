@@ -49,9 +49,9 @@ export function BookingPage() {
       />
       {lastBooking && (
         <p role="status" className="rounded-md bg-green-50 p-3 text-sm text-green-800">
-          Booked {lastBooking.tickets} ticket(s) for {lastBooking.name} at {lastBooking.templeName}{' '}
-          on {formatIstDate(lastBooking.date)}, {formatIstTime(lastBooking.startTime)}. Booking ID{' '}
-          {lastBooking.id}.
+          Booked {lastBooking.tickets} {lastBooking.tickets === 1 ? 'ticket' : 'tickets'} for{' '}
+          {lastBooking.name} at {lastBooking.templeName} on {formatIstDate(lastBooking.date)},{' '}
+          {formatIstTime(lastBooking.startTime)}. Booking ID {lastBooking.id}.
         </p>
       )}
       {templeId ? (

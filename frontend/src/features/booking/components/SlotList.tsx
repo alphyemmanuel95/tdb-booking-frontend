@@ -14,7 +14,7 @@ interface SlotListProps {
   onSelect: (slotId: string) => void;
 }
 
-function describe(slot: Slot, status: SlotStatus): string {
+function describeSlotStatus(slot: Slot, status: SlotStatus): string {
   switch (status) {
     case 'available':
       return `${String(slot.remaining)} of ${String(slot.capacity)} tickets remaining`;
@@ -71,7 +71,7 @@ export function SlotList({ templeId, date, selectedSlotId, onSelect }: SlotListP
                   }}
                 />
                 <span className="font-medium">{formatIstTime(slot.startTime)}</span>
-                <span className="text-sm">{describe(slot, status)}</span>
+                <span className="text-sm">{describeSlotStatus(slot, status)}</span>
               </label>
             </li>
           );
