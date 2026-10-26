@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { configureMockApi, getBookings, getSlots, resetMockApi } from '@/api/mockApi';
 import type { Booking } from '@/api/types';
-import { istDateTime, formatIstDate } from '@/lib/datetime';
+import { formatIstDate, formatIstTime, istDateTime } from '@/lib/datetime';
 import { createTestSeed, TODAY, TOMORROW } from '@/test/bookingSeed';
-import { renderWithProviders, screen, waitFor, within } from '@/test/test-utils';
+import { renderApp, renderWithProviders, screen, waitFor, within } from '@/test/test-utils';
 import { MyBookingsPage } from './MyBookingsPage';
 
 const PHONE = '9876543210';
@@ -185,5 +185,59 @@ describe('MyBookingsPage', () => {
       within(item).getByText(/already started, so the booking can no longer be cancelled/),
     ).toBeInTheDocument();
     expect(within(item).getByText('Confirmed')).toBeInTheDocument();
+  });
+  it('translates a phone error already on screen when the language changes', async () => {
+    resetMockApi(createTestSeed());
+    const { user } = renderApp({ route: '/my-bookings' });
+    await user.type(await screen.findByRole('textbox', { name: 'Phone number' }), '123');
+    await user.click(screen.getByRole('button', { name: 'Find bookings' }));
+    expect(screen.getByRole('textbox', { name: 'Phone number' })).toHaveAccessibleDescription(
+      'The 10-digit mobile number you booked with Enter a 10-digit Indian mobile number',
+    );
+
+    await user.click(screen.getByRole('button', { name: 'മലയാളം' }));
+
+    expect(await screen.findByRole('textbox', { name: 'ഫോൺ നമ്പർ' })).toHaveAccessibleDescription(
+      'ബുക്ക് ചെയ്യാൻ ഉപയോഗിച്ച 10 അക്ക മൊബൈൽ നമ്പർ സാധുവായ 10 അക്ക ഇന്ത്യൻ മൊബൈൽ നമ്പർ നൽകുക',
+    );
+  });
+
+  it('follows the language switch: labels, buttons, statuses and IST dates in Malayalam', async () => {
+    resetMockApi({ ...createTestSeed(), bookings: [makeBooking()] });
+    const { user } = renderApp({ route: '/my-bookings' });
+    await screen.findByRole('heading', { level: 1, name: 'My bookings' });
+
+    await user.click(screen.getByRole('button', { name: 'മലയാളം' }));
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'എന്റെ ബുക്കിംഗുകൾ' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'എന്റെ ബുക്കിംഗുകൾ' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    await user.click(screen.getByRole('button', { name: 'ബുക്കിംഗുകൾ കണ്ടെത്തുക' }));
+    expect(screen.getByRole('textbox', { name: 'ഫോൺ നമ്പർ' })).toHaveAccessibleDescription(
+      'ബുക്ക് ചെയ്യാൻ ഉപയോഗിച്ച 10 അക്ക മൊബൈൽ നമ്പർ സാധുവായ 10 അക്ക ഇന്ത്യൻ മൊബൈൽ നമ്പർ നൽകുക',
+    );
+
+    await user.type(screen.getByRole('textbox', { name: 'ഫോൺ നമ്പർ' }), PHONE);
+    await user.click(screen.getByRole('button', { name: 'ബുക്കിംഗുകൾ കണ്ടെത്തുക' }));
+
+    const item = await screen.findByRole('listitem', { name: 'Sabarimala' });
+    const mlDate = formatIstDate(TOMORROW, 'ml-IN');
+    expect(mlDate).not.toBe(formatIstDate(TOMORROW));
+    expect(within(item).getByText(mlDate)).toBeInTheDocument();
+    const nineAm = formatIstTime(istDateTime(TOMORROW, 9).toISOString(), 'ml-IN');
+    expect(within(item).getByText(`${nineAm} IST`)).toBeInTheDocument();
+    expect(within(item).getByText('സ്ഥിരീകരിച്ചു')).toBeInTheDocument();
+
+    await user.click(within(item).getByRole('button', { name: 'ബുക്കിംഗ് റദ്ദാക്കുക' }));
+    expect(
+      within(item).getByRole('group', { name: /ഈ ബുക്കിംഗ് റദ്ദാക്കണോ\?/ }),
+    ).toBeInTheDocument();
+    expect(within(item).getByRole('button', { name: 'ബുക്കിംഗ് നിലനിർത്തുക' })).toHaveFocus();
+    await user.click(within(item).getByRole('button', { name: 'അതെ, ബുക്കിംഗ് റദ്ദാക്കുക' }));
+    expect(await within(item).findByText('റദ്ദാക്കി')).toBeInTheDocument();
   });
 });

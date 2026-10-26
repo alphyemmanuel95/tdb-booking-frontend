@@ -5,6 +5,7 @@ import {
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react';
+import { Icon } from './Icon';
 
 interface FieldProps {
   label: string;
@@ -13,8 +14,8 @@ interface FieldProps {
 }
 
 const controlClass = (hasError: boolean) =>
-  `block w-full rounded-md border px-3 py-2 text-sm shadow-sm ${
-    hasError ? 'border-red-600' : 'border-slate-500'
+  `block min-h-11 w-full rounded-lg border px-3 py-2 text-base text-stone-900 shadow-sm transition-colors motion-reduce:transition-none sm:text-sm ${
+    hasError ? 'border-red-600 bg-red-50/40' : 'border-stone-500 bg-white hover:border-stone-700'
   }`;
 
 function useFieldIds(error?: string, hint?: string) {
@@ -39,12 +40,16 @@ function FieldMessages({
   return (
     <>
       {hint && (
-        <p id={hintId} className="mt-1 text-xs text-slate-600">
+        <p id={hintId} className="mt-1.5 text-xs text-stone-600">
           {hint}
         </p>
       )}
       {error && (
-        <p id={errorId} className="mt-1 text-sm text-red-700">
+        <p
+          id={errorId}
+          className="mt-1.5 flex items-start gap-1.5 text-sm font-medium text-red-700"
+        >
+          <Icon name="alert" className="mt-0.5 size-4 shrink-0" />
           {error}
         </p>
       )}
@@ -61,7 +66,7 @@ export function Input({ label, error, hint, className = '', ...props }: InputPro
   const { id, hintId, errorId, describedBy } = useFieldIds(error, hint);
   return (
     <div className={className}>
-      <label htmlFor={id} className="mb-1 block text-sm font-medium text-slate-800">
+      <label htmlFor={id} className="mb-1.5 block text-sm font-semibold text-stone-800">
         {label}
       </label>
       <input
@@ -91,7 +96,7 @@ export function Textarea({
   const { id, hintId, errorId, describedBy } = useFieldIds(error, hint);
   return (
     <div className={className}>
-      <label htmlFor={id} className="mb-1 block text-sm font-medium text-slate-800">
+      <label htmlFor={id} className="mb-1.5 block text-sm font-semibold text-stone-800">
         {label}
       </label>
       <textarea
@@ -116,18 +121,24 @@ export function Select({ label, error, hint, className = '', children, ...props 
   const { id, hintId, errorId, describedBy } = useFieldIds(error, hint);
   return (
     <div className={className}>
-      <label htmlFor={id} className="mb-1 block text-sm font-medium text-slate-800">
+      <label htmlFor={id} className="mb-1.5 block text-sm font-semibold text-stone-800">
         {label}
       </label>
-      <select
-        id={id}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy}
-        className={`${controlClass(Boolean(error))} bg-white`}
-        {...props}
-      >
-        {children}
-      </select>
+      <div className="relative">
+        <select
+          id={id}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
+          className={`${controlClass(Boolean(error))} cursor-pointer appearance-none pr-10`}
+          {...props}
+        >
+          {children}
+        </select>
+        <Icon
+          name="chevronDown"
+          className="pointer-events-none absolute top-1/2 right-3 size-5 -translate-y-1/2 text-stone-600"
+        />
+      </div>
       <FieldMessages hint={hint} hintId={hintId} error={error} errorId={errorId} />
     </div>
   );

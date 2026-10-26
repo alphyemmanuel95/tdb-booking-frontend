@@ -1,3 +1,5 @@
+import { useI18n } from '@/i18n/useI18n';
+
 type SpinnerSize = 'sm' | 'md';
 
 const sizeClasses: Record<SpinnerSize, string> = {
@@ -7,13 +9,15 @@ const sizeClasses: Record<SpinnerSize, string> = {
 };
 
 interface SpinnerProps {
+  /** Defaults to "Loading…" in the current language. */
   label?: string;
   size?: SpinnerSize;
   /** Hide from assistive tech when a parent already announces the busy state. */
   decorative?: boolean;
 }
 
-export function Spinner({ label = 'Loading…', size = 'md', decorative = false }: SpinnerProps) {
+export function Spinner({ label, size = 'md', decorative = false }: SpinnerProps) {
+  const { t } = useI18n();
   const circle = (
     <span
       aria-hidden="true"
@@ -22,9 +26,9 @@ export function Spinner({ label = 'Loading…', size = 'md', decorative = false 
   );
   if (decorative) return circle;
   return (
-    <div role="status" className="flex items-center gap-2 text-slate-700">
-      {circle}
-      <span className="text-sm">{label}</span>
+    <div role="status" className="flex items-center gap-3 py-2 text-stone-700">
+      <span className="flex text-brand-700">{circle}</span>
+      <span className="text-sm">{label ?? t.common.loading}</span>
     </div>
   );
 }

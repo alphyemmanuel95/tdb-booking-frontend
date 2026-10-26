@@ -6,13 +6,13 @@ as its own reviewed pull request.
 
 ## Pull requests
 
-| Problem                           | PR    |
-| --------------------------------- | ----- |
-| P1 – Slot list and booking form   | _TBD_ |
-| P2 – Shareable filters            | _TBD_ |
-| P3 – Safe submit                  | _TBD_ |
-| P4 – My bookings and cancellation | _TBD_ |
-| P5 – Accessibility and Malayalam  | _TBD_ |
+| Problem                           | PR                                                                     |
+| --------------------------------- | ---------------------------------------------------------------------- |
+| P1 – Slot list and booking form   | [#6](https://github.com/alphyemmanuel95/tdb-booking-frontend/pull/6)   |
+| P2 – Shareable filters            | [#7](https://github.com/alphyemmanuel95/tdb-booking-frontend/pull/7)   |
+| P3 – Safe submit                  | [#8](https://github.com/alphyemmanuel95/tdb-booking-frontend/pull/8)   |
+| P4 – My bookings and cancellation | [#9](https://github.com/alphyemmanuel95/tdb-booking-frontend/pull/9)   |
+| P5 – Accessibility and Malayalam  | [#10](https://github.com/alphyemmanuel95/tdb-booking-frontend/pull/10) |
 
 **Stack:** Vite 7 · React 19 · React Router 7 · React Hook Form 7 + Zod 4 · Redux Toolkit 2 + RTK Query ·
 Tailwind CSS 4 · Vitest 4 + React Testing Library · MSW 2 · Playwright · ESLint 9 · Prettier · npm

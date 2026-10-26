@@ -23,6 +23,9 @@ beforeEach(() => {
 afterEach(() => {
   server.resetHandlers();
   cleanup();
+  // The remembered language must not leak into the next test.
+  localStorage.clear();
+  document.documentElement.lang = 'en';
 });
 afterAll(() => {
   server.close();

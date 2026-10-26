@@ -1,8 +1,9 @@
 import { getErrorMessage } from '@/api/errors';
+import { Banner } from '@/components/Banner';
 import { ErrorMessage } from '@/components/ErrorMessage';
 import { Select } from '@/components/Input';
 import { Spinner } from '@/components/Spinner';
-import { formatIstDate } from '@/lib/datetime';
+import { useI18n } from '@/i18n/useI18n';
 import { useGetTemplesQuery } from '../bookingApi';
 
 interface TempleDateFiltersProps {
@@ -21,31 +22,36 @@ export function TempleDateFilters({
   onDateChange,
 }: TempleDateFiltersProps) {
   const { data: temples, error, isLoading, refetch } = useGetTemplesQuery(undefined);
+  const { t, formatDate } = useI18n();
 
-  if (isLoading) return <Spinner label="Loading temples…" />;
+  if (isLoading) return <Spinner label={t.filters.loadingTemples} />;
   if (error) {
     return (
       <ErrorMessage
-        title="Could not load temples"
+        title={t.filters.templesError}
         message={getErrorMessage(error)}
         onRetry={() => void refetch()}
       />
     );
   }
   if (!temples || temples.length === 0) {
-    return <p className="text-slate-600">No temples are open for booking right now.</p>;
+    return (
+      <Banner tone="info">
+        <p>{t.filters.noTemples}</p>
+      </Banner>
+    );
   }
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <Select
-        label="Temple"
+        label={t.filters.temple}
         value={templeId}
         onChange={(event) => {
           onTempleChange(event.target.value);
         }}
       >
-        <option value="">Select a temple</option>
+        <option value="">{t.filters.selectTemple}</option>
         {temples.map((temple) => (
           <option key={temple.id} value={temple.id}>
             {temple.name}
@@ -53,7 +59,7 @@ export function TempleDateFilters({
         ))}
       </Select>
       <Select
-        label="Date"
+        label={t.filters.date}
         value={date}
         onChange={(event) => {
           onDateChange(event.target.value);
@@ -61,7 +67,7 @@ export function TempleDateFilters({
       >
         {dates.map((dateKey) => (
           <option key={dateKey} value={dateKey}>
-            {formatIstDate(dateKey)}
+            {formatDate(dateKey)}
           </option>
         ))}
       </Select>

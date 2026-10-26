@@ -18,6 +18,8 @@ export default defineConfig({
     include: ['src/**/*.test.{ts,tsx}'],
     exclude: [...configDefaults.exclude, 'e2e/**'],
     restoreMocks: true,
+    // Integration tests render the whole page; allow for slow, busy CI machines.
+    testTimeout: 15_000,
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],

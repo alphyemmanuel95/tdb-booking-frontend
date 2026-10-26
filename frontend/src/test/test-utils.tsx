@@ -5,12 +5,16 @@ import { Provider } from 'react-redux';
 import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router';
 import { routes } from '@/app/routes';
 import { makeStore, type AppStore, type RootState } from '@/app/store';
+import { LanguageProvider } from '@/i18n/LanguageProvider';
+import type { Language } from '@/i18n/languages';
 
 interface StoreOptions {
   preloadedState?: Partial<RootState>;
   store?: AppStore;
   /** Initial URL for the in-memory router. */
   route?: string;
+  /** Interface language; defaults to the remembered one (English in a fresh test). */
+  language?: Language;
 }
 
 /**
@@ -23,13 +27,16 @@ export function renderWithProviders(
     preloadedState,
     store = makeStore(preloadedState),
     route = '/',
+    language,
     ...options
   }: StoreOptions & Omit<RenderOptions, 'wrapper'> = {},
 ) {
   function Wrapper({ children }: { children: ReactNode }) {
     return (
       <Provider store={store}>
-        <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
+        <LanguageProvider initialLanguage={language}>
+          <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
+        </LanguageProvider>
       </Provider>
     );
   }
@@ -41,6 +48,7 @@ export function renderApp({
   route = '/',
   preloadedState,
   store = makeStore(preloadedState),
+  language,
 }: StoreOptions = {}) {
   const router = createMemoryRouter(routes, { initialEntries: [route] });
   return {
@@ -49,7 +57,9 @@ export function renderApp({
     user: userEvent.setup(),
     ...render(
       <Provider store={store}>
-        <RouterProvider router={router} />
+        <LanguageProvider initialLanguage={language}>
+          <RouterProvider router={router} />
+        </LanguageProvider>
       </Provider>,
     ),
   };

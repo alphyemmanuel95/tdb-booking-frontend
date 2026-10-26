@@ -81,9 +81,10 @@ describe('BookingPage temple and date in the URL', () => {
   });
 
   it('going back to a slow selection never shows the other selection’s slots for it', async () => {
-    // A = Sabarimala (slow), B = Guruvayur (fast, no slots).
+    // A = Sabarimala (slow), B = Guruvayur (fast, no slots). A's delay leaves room for the steps
+    // below even when the whole suite runs in parallel on a busy machine.
     configureMockApi({
-      getSlotsDelayMs: (templeId) => (templeId === 'sabarimala' ? 300 : 20),
+      getSlotsDelayMs: (templeId) => (templeId === 'sabarimala' ? 1500 : 20),
     });
     const { user } = renderAt(`/?temple=sabarimala&date=${TOMORROW}`);
 
@@ -95,7 +96,9 @@ describe('BookingPage temple and date in the URL', () => {
     expect(screen.getByText('Loading slots…')).toBeInTheDocument();
     expect(screen.queryByText(/No darshan slots on this day/)).not.toBeInTheDocument();
 
-    expect(await screen.findByRole('radio', { name: /10 of 20 tickets remaining/ })).toBeEnabled();
+    expect(
+      await screen.findByRole('radio', { name: /10 of 20 tickets remaining/ }, { timeout: 3000 }),
+    ).toBeEnabled();
   });
 
   it('does not keep showing the previous selection while the new one loads', async () => {

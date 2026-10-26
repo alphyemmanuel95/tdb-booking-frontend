@@ -1,11 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMemo, useRef, useState, type BaseSyntheticEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type BaseSyntheticEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { getErrorMessage, isRetryableError } from '@/api/errors';
 import type { Booking, BookingRequest, Slot } from '@/api/types';
+import { Banner } from '@/components/Banner';
 import { Button } from '@/components/Button';
 import { ErrorMessage } from '@/components/ErrorMessage';
 import { Input } from '@/components/Input';
+import { SectionHeading } from '@/components/SectionHeading';
+import { useI18n } from '@/i18n/useI18n';
 import { useCreateBookingMutation } from '../bookingApi';
 import { MAX_TICKETS_PER_BOOKING, makeBookingSchema, type BookingFormValues } from '../schema';
 
@@ -23,6 +26,8 @@ interface BookingAttempt {
 
 export function BookingForm({ slot, onBooked }: BookingFormProps) {
   const liveMaxTickets = Math.min(slot.remaining, MAX_TICKETS_PER_BOOKING);
+  const { t } = useI18n();
+  const headingId = useId();
   const [createBooking, { isLoading, error, reset: resetMutation }] = useCreateBookingMutation();
   // The limit an unresolved attempt was sent with. After a network error that booking may
   // already exist on the server (and be counted in a refreshed `remaining`), so until the
@@ -31,16 +36,28 @@ export function BookingForm({ slot, onBooked }: BookingFormProps) {
   const [pendingAttemptMax, setPendingAttemptMax] = useState<number | null>(null);
   const maxTickets =
     pendingAttemptMax === null ? liveMaxTickets : Math.max(liveMaxTickets, pendingAttemptMax);
-  const schema = useMemo(() => makeBookingSchema(maxTickets), [maxTickets]);
+  const schema = useMemo(
+    () => makeBookingSchema(maxTickets, t.validation),
+    [maxTickets, t.validation],
+  );
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
+    trigger,
+    formState: { errors, isSubmitting, isSubmitted },
   } = useForm<BookingFormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name: '', phone: '', tickets: 1 },
   });
+  // React Hook Form keeps the messages from the last validation run, so after a language switch
+  // (a new schema) re-validate once the form has been submitted, to show errors in the new language.
+  useEffect(() => {
+    if (isSubmitted) void trigger();
+  }, [schema, isSubmitted, trigger]);
+  // "Try again" unmounts with the error banner when the retry starts, so focus is moved to the
+  // form heading first instead of falling back to the page.
+  const headingRef = useRef<HTMLHeadingElement>(null);
   // Set synchronously, so a second click or Enter before React re-renders the disabled
   // button cannot start another submit.
   const isSubmittingRef = useRef(false);
@@ -83,60 +100,75 @@ export function BookingForm({ slot, onBooked }: BookingFormProps) {
   };
 
   if (maxTickets === 0) {
-    return <p className="text-slate-700">This slot is now full. Choose another slot.</p>;
+    return (
+      <Banner tone="info">
+        <p>{t.bookingForm.slotFull}</p>
+      </Banner>
+    );
   }
 
   return (
     <form
       noValidate
-      aria-labelledby="booking-form-heading"
+      aria-labelledby={headingId}
       onSubmit={(event) => void handleFormSubmit(event)}
       onChange={() => {
         if (error) resetMutation();
       }}
-      className="space-y-4"
+      className="space-y-5"
     >
-      <h2 id="booking-form-heading" className="text-lg font-semibold">
-        Devotee details
-      </h2>
-      <p className="text-sm text-slate-600">All fields are required.</p>
+      <div>
+        <SectionHeading id={headingId} ref={headingRef} tabIndex={-1}>
+          {t.bookingForm.heading}
+        </SectionHeading>
+        <p className="mt-1 text-sm text-stone-600">{t.bookingForm.allRequired}</p>
+      </div>
       <Input
-        label="Name"
+        label={t.bookingForm.name}
         autoComplete="name"
         aria-required
         error={errors.name?.message}
         {...register('name')}
       />
-      <Input
-        label="Phone number"
-        type="tel"
-        aria-required
-        inputMode="numeric"
-        autoComplete="tel-national"
-        hint="10-digit mobile number"
-        error={errors.phone?.message}
-        {...register('phone')}
-      />
-      <Input
-        label="Number of tickets"
-        type="number"
-        aria-required
-        inputMode="numeric"
-        min={1}
-        max={maxTickets}
-        hint={`Up to ${String(maxTickets)} tickets`}
-        error={errors.tickets?.message}
-        {...register('tickets', { valueAsNumber: true })}
-      />
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Input
+          label={t.bookingForm.phone}
+          type="tel"
+          aria-required
+          inputMode="numeric"
+          autoComplete="tel-national"
+          hint={t.bookingForm.phoneHint}
+          error={errors.phone?.message}
+          {...register('phone')}
+        />
+        <Input
+          label={t.bookingForm.tickets}
+          type="number"
+          aria-required
+          inputMode="numeric"
+          min={1}
+          max={maxTickets}
+          hint={t.bookingForm.ticketsHint(maxTickets)}
+          error={errors.tickets?.message}
+          {...register('tickets', { valueAsNumber: true })}
+        />
+      </div>
       {error && (
         <ErrorMessage
-          title="Booking failed"
+          title={t.bookingForm.failed}
           message={getErrorMessage(error)}
-          onRetry={isRetryableError(error) ? () => void handleFormSubmit() : undefined}
+          onRetry={
+            isRetryableError(error)
+              ? () => {
+                  headingRef.current?.focus();
+                  void handleFormSubmit();
+                }
+              : undefined
+          }
         />
       )}
-      <Button type="submit" isLoading={isBusy}>
-        {isBusy ? 'Booking…' : 'Book tickets'}
+      <Button type="submit" isLoading={isBusy} className="w-full px-6 sm:w-auto">
+        {isBusy ? t.bookingForm.submitting : t.bookingForm.submit}
       </Button>
     </form>
   );

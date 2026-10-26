@@ -10,9 +10,9 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-blue-700 text-white hover:bg-blue-800 disabled:bg-blue-400',
-  secondary:
-    'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 disabled:text-slate-400',
+  primary:
+    'border-brand-700 bg-brand-700 text-white shadow-sm hover:border-brand-800 hover:bg-brand-800 active:bg-brand-900',
+  secondary: 'border-brand-700 bg-white text-brand-800 hover:bg-brand-50 active:bg-brand-100',
 };
 
 export function Button({
@@ -29,7 +29,7 @@ export function Button({
       type={type}
       disabled={(disabled ?? false) || isLoading}
       aria-busy={isLoading || undefined}
-      className={`inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${variantClasses[variant]} ${className}`}
+      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border px-4 py-2 text-center text-sm font-semibold transition-colors motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-60 ${variantClasses[variant]} ${className}`}
       {...props}
     >
       {isLoading && <Spinner size="sm" decorative />}

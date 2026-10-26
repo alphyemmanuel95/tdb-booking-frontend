@@ -1,6 +1,9 @@
 import { z } from 'zod';
-import { phoneSchema } from '@/features/booking/schema';
+import { makePhoneSchema } from '@/features/booking/schema';
 
-export const bookingLookupSchema = z.object({ phone: phoneSchema });
+/** Phone lookup schema; pass `useI18n().t.validation.phoneInvalid` to translate the error. */
+export function makeBookingLookupSchema(phoneMessage?: string) {
+  return z.object({ phone: makePhoneSchema(phoneMessage) });
+}
 
-export type BookingLookupValues = z.infer<typeof bookingLookupSchema>;
+export type BookingLookupValues = z.infer<ReturnType<typeof makeBookingLookupSchema>>;

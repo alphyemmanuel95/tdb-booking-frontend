@@ -1,28 +1,39 @@
 import { z } from 'zod';
+import { en, type Messages } from '@/i18n/en';
 
 /** Upper limit per booking, even when a slot has more tickets left. */
 export const MAX_TICKETS_PER_BOOKING = 10;
 
-/** 10-digit Indian mobile number. Shared by the booking form and the My bookings lookup. */
-export const phoneSchema = z
-  .string()
-  .trim()
-  .regex(/^[6-9]\d{9}$/, 'Enter a 10-digit Indian mobile number');
+/**
+ * 10-digit Indian mobile number. Shared by the booking form and the My bookings lookup.
+ * Pass `useI18n().t.validation.phoneInvalid` so the error follows the chosen language.
+ */
+export function makePhoneSchema(message: string = en.validation.phoneInvalid) {
+  return z
+    .string()
+    .trim()
+    .regex(/^[6-9]\d{9}$/, message);
+}
 
-/** Booking form schema; `maxTickets` is the smaller of the slot's remaining tickets and the cap. */
-export function makeBookingSchema(maxTickets: number) {
+/** English phone schema, for callers outside React. */
+export const phoneSchema = makePhoneSchema();
+
+/**
+ * Booking form schema; `maxTickets` is the smaller of the slot's remaining tickets and the cap.
+ * Pass `useI18n().t.validation` so errors follow the chosen language.
+ */
+export function makeBookingSchema(
+  maxTickets: number,
+  messages: Messages['validation'] = en.validation,
+) {
   return z.object({
-    name: z
-      .string()
-      .trim()
-      .min(2, 'Name must be at least 2 characters')
-      .max(60, 'Name must be 60 characters or fewer'),
-    phone: phoneSchema,
+    name: z.string().trim().min(2, messages.nameTooShort).max(60, messages.nameTooLong),
+    phone: makePhoneSchema(messages.phoneInvalid),
     tickets: z
-      .number({ error: 'Enter the number of tickets' })
-      .int('Tickets must be a whole number')
-      .min(1, 'Book at least 1 ticket')
-      .max(maxTickets, `You can book at most ${String(maxTickets)} tickets in this slot`),
+      .number({ error: messages.ticketsRequired })
+      .int(messages.ticketsWhole)
+      .min(1, messages.ticketsMin)
+      .max(maxTickets, messages.ticketsMax(maxTickets)),
   });
 }
 
