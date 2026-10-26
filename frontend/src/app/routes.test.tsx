@@ -13,6 +13,19 @@ describe('routing', () => {
     expect(await screen.findByRole('combobox', { name: 'Temple' })).toBeInTheDocument();
   });
 
+  it('navigates to My bookings from the main nav', async () => {
+    const { user } = renderApp({ route: '/' });
+
+    await user.click(screen.getByRole('link', { name: 'My bookings' }));
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'My bookings' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'My bookings' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+  });
+
   it('renders the not-found page for unknown URLs', async () => {
     const { user } = renderApp({ route: '/does-not-exist' });
 
