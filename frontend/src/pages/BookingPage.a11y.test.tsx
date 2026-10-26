@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resetMockApi } from '@/api/mockApi';
+import { configureMockApi, resetMockApi } from '@/api/mockApi';
 import { formatIstDate, formatIstTime, istDateTime } from '@/lib/datetime';
 import { createTestSeed, TOMORROW } from '@/test/bookingSeed';
 import { fireEvent, renderApp, renderWithProviders, screen, within } from '@/test/test-utils';
@@ -121,6 +121,31 @@ describe('BookingPage accessibility', () => {
     await user.click(screen.getByRole('button', { name: 'English' }));
     expect(screen.getByRole('button', { name: 'Book tickets' })).toBeInTheDocument();
     expect(document.documentElement).toHaveAttribute('lang', 'en');
+    // Errors already on screen switch language too, not only on the next edit.
+    expect(await screen.findByRole('textbox', { name: 'Name' })).toHaveAccessibleDescription(
+      'Name must be at least 2 characters',
+    );
+  });
+
+  it('keeps keyboard focus in the form when a retry fails again', async () => {
+    resetMockApi(createTestSeed());
+    const { user } = renderWithProviders(<BookingPage />);
+    await user.selectOptions(await screen.findByRole('combobox', { name: 'Temple' }), 'Sabarimala');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Date' }), TOMORROW);
+    await user.click(await screen.findByRole('radio', { name: /10 of 20 tickets remaining/ }));
+    await user.type(screen.getByRole('textbox', { name: 'Name' }), 'Anil Kumar');
+    await user.type(screen.getByRole('textbox', { name: 'Phone number' }), '9876543210');
+
+    configureMockApi({ failureRate: 1 });
+    await user.click(screen.getByRole('button', { name: 'Book tickets' }));
+    const form = screen.getByRole('form', { name: 'Devotee details' });
+    const retry = await within(form).findByRole('button', { name: 'Try again' });
+    retry.focus();
+    await user.keyboard('{Enter}');
+
+    expect(await within(form).findByRole('button', { name: 'Try again' })).toBeInTheDocument();
+    // The banner (and the focused "Try again") was replaced, but focus stayed in the form.
+    expect(screen.getByRole('heading', { name: 'Devotee details' })).toHaveFocus();
   });
 
   it('remembers the chosen language on the next visit', async () => {

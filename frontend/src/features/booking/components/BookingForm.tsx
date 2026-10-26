@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useId, useMemo, useRef, useState, type BaseSyntheticEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type BaseSyntheticEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { getErrorMessage, isRetryableError } from '@/api/errors';
 import type { Booking, BookingRequest, Slot } from '@/api/types';
@@ -44,11 +44,20 @@ export function BookingForm({ slot, onBooked }: BookingFormProps) {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
+    trigger,
+    formState: { errors, isSubmitting, isSubmitted },
   } = useForm<BookingFormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name: '', phone: '', tickets: 1 },
   });
+  // React Hook Form keeps the messages from the last validation run, so after a language switch
+  // (a new schema) re-validate once the form has been submitted, to show errors in the new language.
+  useEffect(() => {
+    if (isSubmitted) void trigger();
+  }, [schema, isSubmitted, trigger]);
+  // "Try again" unmounts with the error banner when the retry starts, so focus is moved to the
+  // form heading first instead of falling back to the page.
+  const headingRef = useRef<HTMLHeadingElement>(null);
   // Set synchronously, so a second click or Enter before React re-renders the disabled
   // button cannot start another submit.
   const isSubmittingRef = useRef(false);
@@ -109,7 +118,9 @@ export function BookingForm({ slot, onBooked }: BookingFormProps) {
       className="space-y-5"
     >
       <div>
-        <SectionHeading id={headingId}>{t.bookingForm.heading}</SectionHeading>
+        <SectionHeading id={headingId} ref={headingRef} tabIndex={-1}>
+          {t.bookingForm.heading}
+        </SectionHeading>
         <p className="mt-1 text-sm text-stone-600">{t.bookingForm.allRequired}</p>
       </div>
       <Input
@@ -146,7 +157,14 @@ export function BookingForm({ slot, onBooked }: BookingFormProps) {
         <ErrorMessage
           title={t.bookingForm.failed}
           message={getErrorMessage(error)}
-          onRetry={isRetryableError(error) ? () => void handleFormSubmit() : undefined}
+          onRetry={
+            isRetryableError(error)
+              ? () => {
+                  headingRef.current?.focus();
+                  void handleFormSubmit();
+                }
+              : undefined
+          }
         />
       )}
       <Button type="submit" isLoading={isBusy} className="w-full px-6 sm:w-auto">
