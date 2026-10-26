@@ -1,4 +1,5 @@
 import { getErrorMessage } from '@/api/errors';
+import { Banner } from '@/components/Banner';
 import { ErrorMessage } from '@/components/ErrorMessage';
 import { Select } from '@/components/Input';
 import { Spinner } from '@/components/Spinner';
@@ -34,7 +35,11 @@ export function TempleDateFilters({
     );
   }
   if (!temples || temples.length === 0) {
-    return <p className="text-slate-600">{t.filters.noTemples}</p>;
+    return (
+      <Banner tone="info">
+        <p>{t.filters.noTemples}</p>
+      </Banner>
+    );
   }
 
   return (

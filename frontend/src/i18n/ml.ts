@@ -10,6 +10,7 @@ export const ml: Messages = {
     skipToMain: 'പ്രധാന ഉള്ളടക്കത്തിലേക്ക് പോകുക',
     mainNav: 'പ്രധാന മെനു',
     language: 'ഭാഷ',
+    footer: 'ക്ഷേത്ര സന്ദർശനം മുൻകൂട്ടി തീരുമാനിച്ച് ദർശന ടിക്കറ്റുകൾ ഓൺലൈനായി ബുക്ക് ചെയ്യൂ.',
   },
   nav: {
     bookDarshan: 'ദർശനം ബുക്ക് ചെയ്യുക',
@@ -21,6 +22,8 @@ export const ml: Messages = {
   },
   booking: {
     title: 'ദർശനം ബുക്ക് ചെയ്യുക',
+    intro: 'ക്ഷേത്രവും തീയതിയും ദർശന സമയവും തിരഞ്ഞെടുത്ത ശേഷം ഭക്തന്റെ വിവരങ്ങൾ നൽകുക.',
+    templeDateHeading: 'ക്ഷേത്രവും തീയതിയും',
     chooseTemplePrompt: 'ദർശന സമയങ്ങൾ കാണാൻ ഒരു ക്ഷേത്രം തിരഞ്ഞെടുക്കുക.',
     confirmation: (b) =>
       `${b.tickets} ടിക്കറ്റ് ബുക്ക് ചെയ്തു: ${b.name}, ${b.templeName}, ${b.date}, ${b.time}. ബുക്കിംഗ് ഐഡി ${b.bookingId}.`,

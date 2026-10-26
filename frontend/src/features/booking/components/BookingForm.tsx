@@ -6,6 +6,7 @@ import type { Booking, Slot } from '@/api/types';
 import { Button } from '@/components/Button';
 import { ErrorMessage } from '@/components/ErrorMessage';
 import { Input } from '@/components/Input';
+import { SectionHeading } from '@/components/SectionHeading';
 import { useI18n } from '@/i18n/useI18n';
 import { useCreateBookingMutation } from '../bookingApi';
 import { MAX_TICKETS_PER_BOOKING, makeBookingSchema, type BookingFormValues } from '../schema';
@@ -53,12 +54,12 @@ export function BookingForm({ slot, onBooked }: BookingFormProps) {
       onChange={() => {
         if (error) resetMutation();
       }}
-      className="space-y-4"
+      className="space-y-5"
     >
-      <h2 id={headingId} className="text-lg font-semibold">
-        {t.bookingForm.heading}
-      </h2>
-      <p className="text-sm text-slate-600">{t.bookingForm.allRequired}</p>
+      <div>
+        <SectionHeading id={headingId}>{t.bookingForm.heading}</SectionHeading>
+        <p className="mt-1 text-sm text-stone-600">{t.bookingForm.allRequired}</p>
+      </div>
       <Input
         label={t.bookingForm.name}
         autoComplete="name"
@@ -66,29 +67,31 @@ export function BookingForm({ slot, onBooked }: BookingFormProps) {
         error={errors.name?.message}
         {...register('name')}
       />
-      <Input
-        label={t.bookingForm.phone}
-        type="tel"
-        aria-required
-        inputMode="numeric"
-        autoComplete="tel-national"
-        hint={t.bookingForm.phoneHint}
-        error={errors.phone?.message}
-        {...register('phone')}
-      />
-      <Input
-        label={t.bookingForm.tickets}
-        type="number"
-        aria-required
-        inputMode="numeric"
-        min={1}
-        max={maxTickets}
-        hint={t.bookingForm.ticketsHint(maxTickets)}
-        error={errors.tickets?.message}
-        {...register('tickets', { valueAsNumber: true })}
-      />
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Input
+          label={t.bookingForm.phone}
+          type="tel"
+          aria-required
+          inputMode="numeric"
+          autoComplete="tel-national"
+          hint={t.bookingForm.phoneHint}
+          error={errors.phone?.message}
+          {...register('phone')}
+        />
+        <Input
+          label={t.bookingForm.tickets}
+          type="number"
+          aria-required
+          inputMode="numeric"
+          min={1}
+          max={maxTickets}
+          hint={t.bookingForm.ticketsHint(maxTickets)}
+          error={errors.tickets?.message}
+          {...register('tickets', { valueAsNumber: true })}
+        />
+      </div>
       {error && <ErrorMessage title={t.bookingForm.failed} message={getErrorMessage(error)} />}
-      <Button type="submit" isLoading={isLoading}>
+      <Button type="submit" isLoading={isLoading} className="w-full px-6 sm:w-auto">
         {isLoading ? t.bookingForm.submitting : t.bookingForm.submit}
       </Button>
     </form>

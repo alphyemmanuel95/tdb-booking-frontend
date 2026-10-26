@@ -19,6 +19,7 @@ export interface Messages {
     skipToMain: string;
     mainNav: string;
     language: string;
+    footer: string;
   };
   nav: {
     bookDarshan: string;
@@ -30,6 +31,8 @@ export interface Messages {
   };
   booking: {
     title: string;
+    intro: string;
+    templeDateHeading: string;
     chooseTemplePrompt: string;
     confirmation: (booking: BookingConfirmation) => string;
   };
@@ -87,6 +90,7 @@ export const en: Messages = {
     skipToMain: 'Skip to main content',
     mainNav: 'Main',
     language: 'Language',
+    footer: 'Plan your temple visit and book darshan tickets online.',
   },
   nav: {
     bookDarshan: 'Book darshan',
@@ -98,6 +102,8 @@ export const en: Messages = {
   },
   booking: {
     title: 'Book darshan',
+    intro: 'Choose a temple and date, pick a darshan time, then enter the devotee’s details.',
+    templeDateHeading: 'Temple and date',
     chooseTemplePrompt: 'Choose a temple to see its darshan slots.',
     confirmation: (b) =>
       `Booked ${tickets(b.tickets)} for ${b.name} at ${b.templeName} on ${b.date}, ${b.time}. Booking ID ${b.bookingId}.`,

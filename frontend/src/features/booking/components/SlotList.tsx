@@ -1,6 +1,8 @@
 import { getErrorMessage } from '@/api/errors';
 import type { Slot } from '@/api/types';
+import { Banner } from '@/components/Banner';
 import { ErrorMessage } from '@/components/ErrorMessage';
+import { Icon } from '@/components/Icon';
 import { Spinner } from '@/components/Spinner';
 import { useNow } from '@/hooks/useNow';
 import type { Messages } from '@/i18n/en';
@@ -14,6 +16,19 @@ interface SlotListProps {
   selectedSlotId: string | null;
   onSelect: (slotId: string) => void;
 }
+
+const cardClasses: Record<SlotStatus, string> = {
+  available:
+    'cursor-pointer border-stone-300 bg-white hover:border-brand-700 hover:bg-cream-50 has-checked:border-brand-700 has-checked:bg-brand-50 has-checked:ring-2 has-checked:ring-brand-700',
+  full: 'cursor-not-allowed border-dashed border-stone-300 bg-stone-100 text-stone-600',
+  started: 'cursor-not-allowed border-dashed border-stone-300 bg-stone-100 text-stone-600',
+};
+
+const pillClasses: Record<SlotStatus, string> = {
+  available: 'bg-green-50 text-green-800 ring-green-200',
+  full: 'bg-red-50 text-red-800 ring-red-200',
+  started: 'bg-stone-200 text-stone-700 ring-stone-300',
+};
 
 function describeSlotStatus(slot: Slot, status: SlotStatus, t: Messages['slots']): string {
   switch (status) {
@@ -32,7 +47,22 @@ export function SlotList({ templeId, date, selectedSlotId, onSelect }: SlotListP
   const now = useNow();
   const { t, formatTime } = useI18n();
 
-  if (!currentData && isFetching) return <Spinner label={t.slots.loading} />;
+  if (!currentData && isFetching) {
+    return (
+      <div>
+        <Spinner label={t.slots.loading} />
+        {/* Placeholder cards hint at the layout while slots load. */}
+        <div aria-hidden="true" className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2].map((index) => (
+            <div
+              key={index}
+              className="h-24 animate-pulse rounded-xl bg-stone-100 motion-reduce:animate-none"
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
   if (error) {
     return (
       <ErrorMessage
@@ -43,24 +73,25 @@ export function SlotList({ templeId, date, selectedSlotId, onSelect }: SlotListP
     );
   }
   if (!currentData || currentData.length === 0) {
-    return <p className="text-slate-600">{t.slots.empty}</p>;
+    return (
+      <Banner tone="info">
+        <p>{t.slots.empty}</p>
+      </Banner>
+    );
   }
 
   return (
     <fieldset>
-      <legend className="mb-2 text-sm font-medium text-slate-800">{t.slots.legend}</legend>
-      <ul className="grid gap-2 sm:grid-cols-2">
+      {/* The card heading shows this text, so the group name stays for screen readers only. */}
+      <legend className="sr-only">{t.slots.legend}</legend>
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {currentData.map((slot) => {
           const status = getSlotStatus(slot, now);
           const bookable = status === 'available';
           return (
             <li key={slot.id}>
               <label
-                className={`flex flex-wrap items-center gap-x-3 rounded-md border p-3 ${
-                  bookable
-                    ? 'cursor-pointer border-slate-300 bg-white has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50'
-                    : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-600'
-                }`}
+                className={`group flex h-full items-start gap-3 rounded-xl border p-4 transition-colors motion-reduce:transition-none ${cardClasses[status]}`}
               >
                 <input
                   type="radio"
@@ -71,10 +102,25 @@ export function SlotList({ templeId, date, selectedSlotId, onSelect }: SlotListP
                   onChange={() => {
                     onSelect(slot.id);
                   }}
+                  className="mt-1.5 size-5 shrink-0 accent-brand-700"
                 />
-                {/* The space keeps the radio's name readable: "9:00 am 10 of 20 tickets…". */}
-                <span className="font-medium">{formatTime(slot.startTime)}</span>{' '}
-                <span className="text-sm">{describeSlotStatus(slot, status, t.slots)}</span>
+                <span className="flex min-w-0 flex-1 flex-col items-start gap-2">
+                  {/* The space keeps the radio's name readable: "9:00 am 10 of 20 tickets…". */}
+                  <span
+                    className={`text-xl font-bold ${bookable ? 'text-stone-900' : 'text-stone-600'}`}
+                  >
+                    {formatTime(slot.startTime)}
+                  </span>{' '}
+                  <span
+                    className={`rounded-lg px-2.5 py-1 text-xs font-semibold ring-1 ${pillClasses[status]}`}
+                  >
+                    {describeSlotStatus(slot, status, t.slots)}
+                  </span>
+                </span>
+                <Icon
+                  name="checkCircle"
+                  className="hidden size-6 shrink-0 text-brand-700 group-has-checked:block"
+                />
               </label>
             </li>
           );

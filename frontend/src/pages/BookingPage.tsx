@@ -1,5 +1,9 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { Booking } from '@/api/types';
+import { Banner } from '@/components/Banner';
+import { Card } from '@/components/Card';
+import { Icon } from '@/components/Icon';
+import { SectionHeading } from '@/components/SectionHeading';
 import { useGetSlotsQuery } from '@/features/booking/bookingApi';
 import { BookingForm } from '@/features/booking/components/BookingForm';
 import { SlotList } from '@/features/booking/components/SlotList';
@@ -43,47 +47,62 @@ export function BookingPage() {
   };
 
   return (
-    <section aria-labelledby={headingId} className="space-y-6">
-      <h1 id={headingId} className="text-3xl font-bold">
-        {t.booking.title}
-      </h1>
-      <TempleDateFilters
-        templeId={templeId}
-        date={date}
-        dates={dates}
-        onTempleChange={(id) => {
-          changeSelection({ templeId: id });
-        }}
-        onDateChange={(dateKey) => {
-          changeSelection({ date: dateKey });
-        }}
-      />
+    <section aria-labelledby={headingId}>
+      <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-brand-800 to-brand-700 px-5 py-7 text-white shadow-md sm:px-8 sm:py-9">
+        <Icon
+          name="lamp"
+          className="absolute -right-4 -bottom-6 size-36 text-white/10 sm:right-4 sm:size-44"
+        />
+        <h1 id={headingId} className="relative text-3xl font-bold sm:text-4xl">
+          {t.booking.title}
+        </h1>
+        <p className="relative mt-2 max-w-prose text-brand-100 sm:text-lg">{t.booking.intro}</p>
+      </div>
+      <Card step={1} className="mt-10">
+        <SectionHeading className="mb-4">{t.booking.templeDateHeading}</SectionHeading>
+        <TempleDateFilters
+          templeId={templeId}
+          date={date}
+          dates={dates}
+          onTempleChange={(id) => {
+            changeSelection({ templeId: id });
+          }}
+          onDateChange={(dateKey) => {
+            changeSelection({ date: dateKey });
+          }}
+        />
+      </Card>
       {/* Always rendered so screen readers announce the message when it is added. */}
       <div role="status">
         {lastBooking && (
-          <p
-            ref={confirmationRef}
-            tabIndex={-1}
-            className="rounded-md bg-green-50 p-3 text-sm text-green-800"
-          >
-            {t.booking.confirmation({
-              tickets: lastBooking.tickets,
-              name: lastBooking.name,
-              templeName: lastBooking.templeName,
-              date: formatDate(lastBooking.date),
-              time: formatTime(lastBooking.startTime),
-              bookingId: lastBooking.id,
-            })}
-          </p>
+          <Banner tone="success" className="mt-6">
+            <p ref={confirmationRef} tabIndex={-1} className="rounded-sm">
+              {t.booking.confirmation({
+                tickets: lastBooking.tickets,
+                name: lastBooking.name,
+                templeName: lastBooking.templeName,
+                date: formatDate(lastBooking.date),
+                time: formatTime(lastBooking.startTime),
+                bookingId: lastBooking.id,
+              })}
+            </p>
+          </Banner>
         )}
       </div>
-      {templeId ? (
-        <SlotList templeId={templeId} date={date} selectedSlotId={slotId} onSelect={setSlotId} />
-      ) : (
-        <p className="text-slate-600">{t.booking.chooseTemplePrompt}</p>
-      )}
+      <Card step={2} className="mt-10">
+        <SectionHeading className="mb-4">{t.slots.legend}</SectionHeading>
+        {templeId ? (
+          <SlotList templeId={templeId} date={date} selectedSlotId={slotId} onSelect={setSlotId} />
+        ) : (
+          <Banner tone="info">
+            <p>{t.booking.chooseTemplePrompt}</p>
+          </Banner>
+        )}
+      </Card>
       {selectedSlot && (
-        <BookingForm key={selectedSlot.id} slot={selectedSlot} onBooked={setLastBooking} />
+        <Card step={3} className="mt-10">
+          <BookingForm key={selectedSlot.id} slot={selectedSlot} onBooked={setLastBooking} />
+        </Card>
       )}
     </section>
   );
